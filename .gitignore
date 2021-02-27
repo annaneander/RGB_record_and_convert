@@ -1,0 +1,8 @@
+*.o
+*.a
+*.elf
+*.hex
+.deps
+*.DS_Store
+
+pic32mx.h
