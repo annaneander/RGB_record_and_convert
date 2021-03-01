@@ -1,9 +1,8 @@
 /* display_data.c
-   This file compiled 2015 by F Lundevall
+   This code compiled 2015 by F Lundevall
    from original code written by Axel Isaksson
 
-	 Author (AN) and modification (*AN*): Anna Neander (2021)
-	 Also added som comments and renaming.
+	 Added some comments and renaaming: Anna Neander (2021)
 
    For copyright and licensing, see file COPYING */
 

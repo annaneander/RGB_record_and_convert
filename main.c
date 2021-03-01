@@ -9,12 +9,14 @@
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
+#include <stdbool.h>
 #include "main.h"
 #include "display.h"
 #include "timer.h"
 
 
 int timeout = 0x0;
+bool status = 1;
 
 
 int main(void) {
@@ -22,20 +24,26 @@ int main(void) {
 	chipkit_init();
 	display_init();
 	timer_init();
+	rgb_i2c_init();
 	enable_interrupt();
 
-
-	/*display_string(0, "RGB ");
-	display_string(1, "hopefully");
-	display_string(2, "or something ");
-	display_string(3, "else...");
+	display_string(0, "RGB ");
+	display_string(1, "R");
+	display_string(2, "G ");
+	display_string(3, "B");
 	display_update();
-	*/
+
+	status = send_data(0x34);
+	if (status){
+		display_string(3, "ID ok");
+	}
+	else{
+		display_string(3, "ID inte ok");
+	}
+		//display_update();
 
 	//display_image(96, icon);
-	display_image(0, font);
-
-
+	//display_image(0, font);
 
 	while( 1 )
 	{
@@ -118,7 +126,7 @@ void user_isr( void ) {
   if (timeout == 10) {
 		//display_string(0, "timeout" );
   	//display_update();
-		display_image(0, font);
+		//display_image(0, font);
 		quicksleep(3000000);
     timeout = 0;
  	}

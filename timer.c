@@ -1,8 +1,6 @@
 /* timer.c (from lab 3)
 
-   This file written 2015 by F Lundevall
-   Updated 2017-04-21 by F Lundevall
-   Author (AN) and modification (*AN*):  Anna Neander (2021)
+   Author: Anna Neander (2021)
    For copyright and licensing, see file COPYING
 
    */

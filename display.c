@@ -8,7 +8,6 @@
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
-//#include "mipslab.h"  /* Declatations for these labs */
 #include "display.h"
 
 
@@ -207,6 +206,16 @@ void display_debug( volatile int * const addr )
   display_string( 2, "Data" );
   num32asc( &textbuffer[1][6], (int) addr );
   num32asc( &textbuffer[2][6], *addr );
+  display_update();
+}
+
+
+void display_debug_8( volatile int * const addr )
+{
+  display_string( 2, "Addr" );
+  display_string( 3, "Data" );
+  num32asc( &textbuffer[2][6], (int) addr );
+  num32asc( &textbuffer[3][6], (uint8_t) *addr );
   display_update();
 }
 

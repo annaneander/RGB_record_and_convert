@@ -11,7 +11,7 @@
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
-//#include "main.h"  
+//#include "main.h"
 #include "display_data.h"
 
 
@@ -38,6 +38,7 @@ void display_string(int line, char *s);
 void display_update(void);
 
 void display_debug( volatile int * const addr );
+void display_debug_8( volatile int * const addr );
 
 /* ------- local helper function to display ----- */
 static void num32asc( char * s, int );
