@@ -202,23 +202,34 @@ void quicksleep(int cyc) {
 */
 void display_debug( volatile int * const addr )
 {
-  display_string( 1, "Addr" );
-  display_string( 2, "Data" );
-  num32asc( &textbuffer[1][6], (int) addr );
-  num32asc( &textbuffer[2][6], *addr );
+  display_string( 0, "Addr" );
+  display_string( 1, "Data" );
+  num32asc( &textbuffer[0][6], (int) addr );
+  num32asc( &textbuffer[1][6], *addr );
   display_update();
 }
 
 
-void display_debug_8( volatile int * const addr )
+void display_debug_2( volatile int* const addr )
 {
   display_string( 2, "Addr" );
   display_string( 3, "Data" );
   num32asc( &textbuffer[2][6], (int) addr );
-  num32asc( &textbuffer[3][6], (uint8_t) *addr );
+  num32asc( &textbuffer[3][6], *addr );
   display_update();
 }
 
+void display_debug_8( volatile uint8_t* const addr )
+{
+  //int ad = (*addr & 0x000000FF); //funkar ej
+  int ad = (*addr + 0x0);
+
+  display_string( 2, "Addr" );
+  display_string( 3, "Data" );
+  num32asc( &textbuffer[2][6], (int) addr );
+  num32asc( &textbuffer[3][6], ad );
+  display_update();
+}
 
 
 

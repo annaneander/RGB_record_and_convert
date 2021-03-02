@@ -77,7 +77,10 @@ void rgb_i2c_init( void );
 bool send_data(uint8_t data); //bara testfunkt atm
 
 bool write_to_reg(uint8_t reg, uint8_t data);
+volatile uint8_t* p_read_from_reg(uint8_t reg);
+
 uint8_t read_from_reg(uint8_t reg);
+void rgbc_from_reg(uint8_t reg);
 
 
 #endif

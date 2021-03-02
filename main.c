@@ -43,7 +43,7 @@ int main(void) {
 		//display_update();
 
 	//display_image(96, icon);
-	//display_image(0, font);
+//	display_image(0, font);
 
 	while( 1 )
 	{

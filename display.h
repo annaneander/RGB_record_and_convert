@@ -38,7 +38,8 @@ void display_string(int line, char *s);
 void display_update(void);
 
 void display_debug( volatile int * const addr );
-void display_debug_8( volatile int * const addr );
+void display_debug_2( volatile int * const addr );
+void display_debug_8( volatile uint8_t* const addr );
 
 /* ------- local helper function to display ----- */
 static void num32asc( char * s, int );
