@@ -227,14 +227,14 @@ void rgbc_from_reg(uint8_t reg){
 
   //display_debug(&(rgbc[0]));    //R
 	//display_debug_2(&I2C1RCV);    //G
-
   for (i = 0; i<4; i++){
     value = itoaconv(*(rgbc+i));
     display_string(i,value);
     }
     display_update();
-
 }
+
+
 
 
 
