@@ -1,10 +1,10 @@
-/* display.h
-   This file written 2015 by F Lundevall
-   Some parts are original code written by Axel Isaksson.
-   Renaming, refactor and some modfications: Anna Neander (2021)
-	 Author (AN) and modification (*AN*): Anna Neander (2021)
-
-   For copyright and licensing, see file COPYING */
+/* * * display.h
+*   Author: F Lundevall (2015), based on code written by Axel Isaksson.
+*   Additions, comments and modifications:  Anna Neander (2021)
+*
+*   For copyright and licensing, see file COPYING
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef DISPLAY_H
 #define DISPLAY_H
@@ -36,10 +36,11 @@ void display_init(void);
 void display_image(int x, const uint8_t *data);
 void display_string(int line, char *s);
 void display_update(void);
+void hello_display(void);
 
 void display_debug( volatile int * const addr );
-void display_debug_2( volatile int * const addr );
-void display_debug_8( volatile uint8_t* const addr );
+void display_debug_2( volatile int*  addr );
+void display_debug_8( volatile uint8_t* addr );
 
 /* ------- local helper function to display ----- */
 static void num32asc( char * s, int );

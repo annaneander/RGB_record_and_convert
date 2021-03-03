@@ -1,43 +1,43 @@
-/* display.c
-   This file written 2015 by F Lundevall
-   Some parts are original code written by Axel Isaksson
-	 Comments and modifications:  Anna Neander (2021)
-
-   For copyright and licensing, see file COPYING */
+/* * * display.c
+*   Author: F Lundevall (2015), based on code written by Axel Isaksson.
+*   Additions, comments and modifications:  Anna Neander (2021)
+*
+*   For copyright and licensing, see file COPYING
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include "display.h"
 
-
 /* Text buffer for display output */
 char textbuffer[4][16];
-
 
 /*
  	set up display
 */
 void display_init(void) {
+
   /* Output pins for display signals */
   PORTF = 0xFFFF;
   PORTG = (1 << 9);
   ODCF = 0x0;
   ODCG = 0x0;
-  TRISFCLR = 0x70;
-  TRISGCLR = 0x200;
+  TRISFCLR = (0x7 << 4);
+  TRISGCLR = (1 << 9);
 
-  /* Set up SPI as control */
-  SPI2CON = 0;  /* control */
-  SPI2BRG = 4;  /* Baud rate generator */
-  /* SPI2STAT bit SPIROV = 0; */
-  SPI2STATCLR = 0x40;
-  /* SPI2CON bit CKP = 1; */
-  SPI2CONSET = 0x40;
-  /* SPI2CON bit MSTEN = 1; */
-  SPI2CONSET = 0x20;
-  /* SPI2CON bit ON = 1; */
-  SPI2CONSET = 0x8000;
+  /* Example from chipkit ref: Baudrate of 15 -> 8Mhz, with 80Mhz PBCLK clock */
+
+  /* Set up SPI as controller on port 2 */
+  SPI2CON = 0;  /* turn off and reset control  */
+  SPI2BRG = 4;  /* Example from A. Isaksson: Baud rate 4 -> 10Mhz */
+  /*SPI2BRG = 15; //8Mhz, with 80Mhz PB clock  */
+  SPI2STATCLR = (1 << 6);  /* SPI2STAT bit SPIROV = 0; No overflow */
+  SPI2CONSET = (1 << 6);  /* SPI2CON bit CKP = 1; Idle = Clock is low */
+  SPI2CONSET = (1 << 5);  /* SPI2CON bit MSTEN = 1;  Master/Controller */
+  SPI2CONSET = (1 << 15); /* SPI2CON bit ON = 1;  PON */
+
 
   DISPLAY_CHANGE_TO_COMMAND_MODE;
 	quicksleep(10);
@@ -78,6 +78,15 @@ void display_init(void) {
 	spi_send_recv(0xAF);
 }
 
+
+void hello_display(){
+	display_string(0, "RGB RGB RGB RGB ");
+	display_string(1, "GB RGB RGB RGB RG");
+	display_string(2, "B RGB RGB RGB RGB ");
+	display_string(3, " RGB RGB RGB RGB RGB");
+	display_update();
+}
+
 /**
 *	Store max 16 chars in textbuffer on line 0..3.
 *	Content of textbuffer is used to update display in
@@ -111,16 +120,17 @@ void display_image(int x, const uint8_t *data) {
 		spi_send_recv(i);
 
 		/* Start at column offset x */
-		spi_send_recv(x & 0xF);  // ?? set low nybble of column  ??
-		spi_send_recv(0x10 | ((x >> 4) & 0xF)); //?? set high nybble of column
+		spi_send_recv(x & 0xF);  // set low nybble of column
+		spi_send_recv(0x10 | ((x >> 4) & 0xF)); // set high nybble of column
 
 		DISPLAY_CHANGE_TO_DATA_MODE;
 
+    /* storlek för varghuvudet 32 pxl bredd */
 		//for(j = 0; j < 32; j++)  //only 32 pxl atm
 		//	spi_send_recv(~data[i*32 + j]);  //inverted image
 	//}
 
-//test för att printa fonten.
+/*  strl för fonten. 128 pxl bredd  */
 /* 4 första raderna
 for(j = 0; j < 128; j++)
  spi_send_recv(~data[i*128 + j]);  //inverted image
@@ -164,7 +174,7 @@ void display_update(void) {
 
 /*
 	helper function
- 	send one byte to update display?
+ 	send one byte to update display
 */
 uint8_t spi_send_recv(uint8_t data) {
 	while(!(SPI2STAT & 0x08));
@@ -210,7 +220,7 @@ void display_debug( volatile int * const addr )
 }
 
 
-void display_debug_2( volatile int* const addr )
+void display_debug_2( volatile int* addr )
 {
   display_string( 2, "Addr" );
   display_string( 3, "Data" );
@@ -219,11 +229,9 @@ void display_debug_2( volatile int* const addr )
   display_update();
 }
 
-void display_debug_8( volatile uint8_t* const addr )
+void display_debug_8( volatile uint8_t* addr )
 {
-  //int ad = (*addr & 0x000000FF); //funkar ej
   int ad = (*addr + 0x0);
-
   display_string( 2, "Addr" );
   display_string( 3, "Data" );
   num32asc( &textbuffer[2][6], (int) addr );

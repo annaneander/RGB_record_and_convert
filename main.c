@@ -2,52 +2,47 @@
 
    This file written 2015 by Axel Isaksson,
    modified 2015, 2017 by F Lundevall.
-	 Latest update 2017-04-21 by F Lundevall.
-	 Comments and modifications:  Anna Neander (2021)
+   Latest update 2017-04-21 by F Lundevall.
+   Comments and modifications:  Anna Neander (2021)
 
    For copyright and licensing, see file COPYING */
 
-#include <stdint.h>   /* Declarations of uint_32 and the like */
-#include <pic32mx.h>  /* Declarations of system-specific addresses etc */
-#include <stdbool.h>
 #include "main.h"
-#include "display.h"
-#include "timer.h"
-
 
 int timeout = 0x0;
-bool status = 1;
-
 
 int main(void) {
+
+	bool status = 0;
 
 	chipkit_init();
 	display_init();
 	timer_init();
 	rgb_i2c_init();
 	enable_interrupt();
+	hello_display();
 
-	display_string(0, "RGB ");
-	display_string(1, "R");
-	display_string(2, "G ");
-	display_string(3, "B");
-	display_update();
+	/* TODO ?: change to timer interrupt */
+	if(hello_rgbc()) {
+		quicksleep(4000000);
+		display_string(0, "sensor connected");
+		display_update();
+		quicksleep(4000000);
 
-	status = send_data(0x34);
-	if (status){
-		display_string(3, "ID ok");
+		//display_image(96, icon);
+		//display_image(0, font);
+
+		while( 1 )
+		{
+			status = get_RGBC();
+			/*get value of rgbc */
+			/*perform conversions * /
+			/* update display*/
+		}
 	}
-	else{
-		display_string(3, "ID inte ok");
-	}
-		//display_update();
-
-	//display_image(96, icon);
-//	display_image(0, font);
-
-	while( 1 )
-	{
-	  work();
+	else {
+		display_string(0, "not connected");
+		display_update();
 	}
 
 	return 0;
@@ -56,31 +51,22 @@ int main(void) {
 
 /* set up chipkit */
 void chipkit_init(void) {
-	/*
-This will set the peripheral bus clock to the same frequency
-as the sysclock. That means 80 MHz, when the microcontroller
-is running at 80 MHz. Changed 2017, as recommended by Axel.
-*/
-SYSKEY = 0xAA996655;  /* Unlock OSCCON, step 1 */
-SYSKEY = 0x556699AA;  /* Unlock OSCCON, step 2 */
-while(OSCCON & (1 << 21)); /* Wait until PBDIV ready */
-OSCCONCLR = 0x180000; /* clear PBDIV bit <0,1> */
-while(OSCCON & (1 << 21));  /* Wait until PBDIV ready */
-SYSKEY = 0x0;  /* Lock OSCCON */
+
+	/* Set up peripheral bus clock to 40Mhz; 1:2 */
+	OSCCON &= ~0x180000;
+	OSCCON |= 0x080000;
 
 /* Set up output pins */
-AD1PCFG = 0xFFFF; /* analog i/o pins as digital */
-ODCE = 0x0; /* PORTE not open drain. (by DEFAULT?)*/
-TRISECLR = 0xFF;  /* LED1...LED8 */
-PORTE = 0x0;  /* Init LEDS to 0 */
+	AD1PCFG = 0xFFFF; /* analog i/o pins as digital */
+	ODCE = 0x0; /* PORTE not open drain. (by DEFAULT?)*/
+	TRISECLR = 0xFF; /* LED1...LED8 */
+	PORTE = 0x0; /* Init LEDS to 0 */
 
 /* Set up input pins (input by DEFAULT) */
-TRISDSET = (1 << 8);  /* SW1...SW4 + Button2...Button4  */
-TRISFSET = (1 << 1); /* Button1 */
+	TRISDSET = (0xFE << 4); /* SW1...SW4 + Button2...Button4  */
+	TRISFSET = (1 << 1); /* Button1 */
 
 }
-
-
 
 /* This function is called repetitively from the main program */
 void work( void ) {
@@ -94,10 +80,8 @@ void work( void ) {
 /* Interrupt Service Routine*/
 /* ATM: Lite Tester*/
 void user_isr( void ) {
-
-  if (IFS(0) & 0x100){  /* timer 2*/
-    IFSCLR(0) = 0x100; /* clear timer2 flag */
-
+	timeout++;
+	if (IFS(0) & 1 << 8) {  /* timer 2*/
 		/* get input from buttons */
 		int buttons = getbtns();
 		if (buttons & 1)
@@ -110,40 +94,35 @@ void user_isr( void ) {
 			display_string(0,"knapp 4 ");
 		//display_update();
 		quicksleep(10000);
-		timeout++;
-  }
+		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
+	}
 
-  if (IFS(0) & 0x800){ /* sw2 */
-    IFSCLR(0) = 0x800;  /* clear sw2 flag */
-
-  	display_string(0, "sw2" );
-  	//display_update();
+	if (IFS(0) & 1 << 11) { /* sw2 */
+		display_string(0, "sw2" );
+		display_update();
 		quicksleep(1000000);
-		timeout++;
-
-  }
-
-  if (timeout == 10) {
+		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
+	}
+	if (timeout == 10) {
 		//display_string(0, "timeout" );
-  	//display_update();
+		//display_update();
 		//display_image(0, font);
 		quicksleep(3000000);
-    timeout = 0;
- 	}
+		timeout = 0;
+	}
 
 }
-
 
 
 /* -----------   some i/o functions for buttons and switches ---------     */
 
-/* get status of switches SW4...SW1 in (3:0) */
+/* get status of switches SW4...SW1 in <3:0> */
 int getsw( void ){
-  return ((PORTD >> 8) & 0xF);
+	return ((PORTD >> 8) & 0xF);
 }
 
-/* get status of push-buttons BTN4...BTN1 in (3:0)  */
+/* get status of push-buttons BTN4...BTN1 in <3:0>  */
 int getbtns( void ){
-  return ((PORTD >> 4) & 0xE) | ((PORTF >>1) & 0x1);
-  //return ((((PORTD >> 5) & 0x7) << 1) | ((PORTF >> 1) & 0x1));
+	return ((PORTD >> 4) & 0xE) | ((PORTF >>1) & 0x1);
+	//return ((((PORTD >> 5) & 0x7) << 1) | ((PORTF >> 1) & 0x1));
 }
