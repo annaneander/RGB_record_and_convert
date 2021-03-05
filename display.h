@@ -12,7 +12,7 @@
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 //#include "main.h"
-#include "display_data.h"
+//#include "display_data.h"
 
 
 #define DISPLAY_CHANGE_TO_COMMAND_MODE (PORTFCLR = 0x10)
@@ -33,28 +33,28 @@
 
 /* ----------- functions ------------------  */
 void display_init(void);
-void display_image(int x, const uint8_t *data);
-void display_string(int line, char *s);
+void display_image(int x, int w, const uint8_t *data);
+void display_string(int line, char *s, int offset);
 void display_update(void);
 void hello_display(void);
+void display_rgbc(uint16_t* colors);
+void display_clear(void);
+void display_clr_buffer(void);
 
-void display_debug( volatile int * const addr );
-void display_debug_2( volatile int*  addr );
-void display_debug_8( volatile uint8_t* addr );
+
+void display_debug( volatile int *const addr );
+void display_debug_2( volatile int *addr );
+void display_debug_8( volatile uint8_t *addr );
+
 
 /* ------- local helper function to display ----- */
-static void num32asc( char * s, int );
+static void num32asc( char *s, int );
 uint8_t spi_send_recv(uint8_t data);  // static?
 void quicksleep(int cyc); //static?
 
-char * itoaconv( int num );  //används?
-
-/* ------- bitmap array containing font-------- */
-//extern const uint8_t const font[128*8];  //  1024 bytes, en rad på displayen?
-/* Declare bitmap array containing icon */
-//extern const uint8_t const icon[128]; // 32*4 bytes
-/* Declare text buffer for display output */
-//extern char textbuffer[4][16];
+char* itoaconv(int num);
+void concat(char *first, char *second);
+static void uint16_t_asc( char * s, int n );
 
 
 #endif

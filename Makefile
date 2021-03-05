@@ -1,5 +1,7 @@
 # PIC32 device number
-DEVICE		= 32MX320F128H
+#DEVICE		= 32MX320F128H
+#(for uC32 to use extra memory)
+DEVICE = 32MX340F512H
 
 # UART settings for programmer
 TTYDEV		?=/dev/ttyUSB0

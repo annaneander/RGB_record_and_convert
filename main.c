@@ -1,15 +1,17 @@
-/* main.c
+/* * * main.c
+*
+*   Author: Anna Neander (2021)
+*
+*   For copyright and licensing, see file COPYING
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-   This file written 2015 by Axel Isaksson,
-   modified 2015, 2017 by F Lundevall.
-   Latest update 2017-04-21 by F Lundevall.
-   Comments and modifications:  Anna Neander (2021)
-
-   For copyright and licensing, see file COPYING */
 
 #include "main.h"
 
 int timeout = 0x0;
+uint16_t colors[4] = {0}; /* 16 bit color values of CRGB */
+uint8_t colors_8[4] = {0}; /* 8 bit color values of CRGB */
 
 int main(void) {
 
@@ -18,31 +20,43 @@ int main(void) {
 	chipkit_init();
 	display_init();
 	timer_init();
-	rgb_i2c_init();
+	i2c_init();
 	enable_interrupt();
 	hello_display();
 
-	/* TODO ?: change to timer interrupt */
+	/* TODO ?: use timer interrupt for something */
 	if(hello_rgbc()) {
 		quicksleep(4000000);
-		display_string(0, "sensor connected");
+		display_string(0, "sensor connected",0);
 		display_update();
 		quicksleep(4000000);
+		display_clear();
+		/* display some menu */
 
-		//display_image(96, icon);
-		//display_image(0, font);
+		//quicksleep(40000000);
 
 		while( 1 )
 		{
-			status = get_RGBC();
-			/*get value of rgbc */
+			/*get value of 16 bit rgbc */
+			status = i2c_get_rgbc(colors);
+
 			/*perform conversions * /
+
 			/* update display*/
+			display_rgbc(colors);
+
+			quicksleep(100000);
+
+			/* save values */
+
 		}
+
 	}
 	else {
-		display_string(0, "not connected");
+		display_string(3, "not connected",0);
 		display_update();
+		quicksleep(4000000);
+
 	}
 
 	return 0;
@@ -52,9 +66,13 @@ int main(void) {
 /* set up chipkit */
 void chipkit_init(void) {
 
-	/* Set up peripheral bus clock to 40Mhz; 1:2 */
-	OSCCON &= ~0x180000;
-	OSCCON |= 0x080000;
+OSCCONSET = 1 << 19; /* peripheral bus clock to 40Mhz; 1:2
+/*
+Set in <20:19> to 1:1, 1:2, 1:4 or 1:8.
+Comment out last line will set the peripheral bus clock to
+the same frequency as the sysclock. That means 80 MHz,
+when the microcontroller is running at 80 MHz.
+Then baud rates for SPI & I2C need to be changed as well. */
 
 /* Set up output pins */
 	AD1PCFG = 0xFFFF; /* analog i/o pins as digital */
@@ -68,10 +86,6 @@ void chipkit_init(void) {
 
 }
 
-/* This function is called repetitively from the main program */
-void work( void ) {
-
-}
 
 
 /* INT0 = INT1 = 2; INT2 = 7;  INT3 =  INT4 = 35  INT*/
@@ -85,21 +99,21 @@ void user_isr( void ) {
 		/* get input from buttons */
 		int buttons = getbtns();
 		if (buttons & 1)
-			display_string(0,"knapp 1 ");
+			display_string(0,"knapp 1 ", 0);
 		if (buttons & 2)
-			display_string(0,"knapp 2 ");
+			display_string(0,"knapp 2 ", 0);
 		if (buttons & 4)
-			display_string(0,"knapp 3 ");
+			display_string(0,"knapp 3 ", 0);
 		if (buttons & 8)
-			display_string(0,"knapp 4 ");
+			display_string(0,"knapp 4 ", 0);
 		//display_update();
 		quicksleep(10000);
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
 
 	if (IFS(0) & 1 << 11) { /* sw2 */
-		display_string(0, "sw2" );
-		display_update();
+		display_string(0, "sw2", 0);
+		//display_update();
 		quicksleep(1000000);
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
 	}
@@ -107,7 +121,7 @@ void user_isr( void ) {
 		//display_string(0, "timeout" );
 		//display_update();
 		//display_image(0, font);
-		quicksleep(3000000);
+		//quicksleep(3000000);
 		timeout = 0;
 	}
 
@@ -116,12 +130,12 @@ void user_isr( void ) {
 
 /* -----------   some i/o functions for buttons and switches ---------     */
 
-/* get status of switches SW4...SW1 in <3:0> */
+/* return status of switches SW4...SW1 in <3:0> */
 int getsw( void ){
 	return ((PORTD >> 8) & 0xF);
 }
 
-/* get status of push-buttons BTN4...BTN1 in <3:0>  */
+/* return status of push-buttons BTN4...BTN1 in <3:0>  */
 int getbtns( void ){
 	return ((PORTD >> 4) & 0xE) | ((PORTF >>1) & 0x1);
 	//return ((((PORTD >> 5) & 0x7) << 1) | ((PORTF >> 1) & 0x1));

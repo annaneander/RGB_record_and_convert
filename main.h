@@ -18,7 +18,6 @@
 
 void chipkit_init(void);
 
-void work(void);
 
 
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */

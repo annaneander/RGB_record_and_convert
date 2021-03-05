@@ -10,8 +10,8 @@
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include "display.h"
+#include "display_data.h"
 
-/* Text buffer for display output */
 char textbuffer[4][16];
 
 /*
@@ -31,7 +31,7 @@ void display_init(void) {
 
   /* Set up SPI as controller on port 2 */
   SPI2CON = 0;  /* turn off and reset control  */
-  SPI2BRG = 4;  /* Example from A. Isaksson: Baud rate 4 -> 10Mhz */
+  SPI2BRG = 4;  /* --> 10Mhz; which is max for shield display  */
   /*SPI2BRG = 15; //8Mhz, with 80Mhz PB clock  */
   SPI2STATCLR = (1 << 6);  /* SPI2STAT bit SPIROV = 0; No overflow */
   SPI2CONSET = (1 << 6);  /* SPI2CON bit CKP = 1; Idle = Clock is low */
@@ -80,26 +80,83 @@ void display_init(void) {
 
 
 void hello_display(){
-	display_string(0, "RGB RGB RGB RGB ");
-	display_string(1, "GB RGB RGB RGB RG");
-	display_string(2, "B RGB RGB RGB RGB ");
-	display_string(3, " RGB RGB RGB RGB RGB");
+	display_string(0, "RGB RGB RGB RGB ",0);
+	display_string(1, "GB RGB RGB RGB RG", 0);
+	display_string(2, "B RGB RGB RGB RGB ", 0);
+	display_string(3, " RGB RGB RGB RGB RGB", 0);
 	display_update();
 }
 
+
+/* update display with 16 bit RGBC values */
+void display_rgbc(uint16_t* colors){
+  char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
+  int i;
+
+  for (i = 0; i<4; i++) {
+    display_string(i, *(col+i), 0);
+    display_string(i, itoaconv(*(colors+i)), 4);
+  }
+  display_update();
+}
+
+/* update display with 8 bit color values */
+void display_rgbc_8(uint16_t* colors){
+  char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
+  int i;
+
+  for (i = 0; i<4; i++) {
+    display_string(i, *(col+i), 0);
+    display_string(i, itoaconv(*(colors+i)), 4);
+  }
+  display_update();
+}
+
+
+ /* clear all bits in display and local textbuffer */
+  void display_clear(void){
+    uint8_t clear[128*5];
+    int i;
+    for (i = 0; i<128*5 ; i++)
+        clear[i] = 0x00;
+    display_image(0, 128, clear);
+    display_clr_buffer();
+  }
+
+  /* clear local text display buffer */
+  void display_clr_buffer(void){
+  int i, j;
+  for( i = 0; i <4; i++){
+      for(j = 0; j<16; j++)
+         textbuffer[i][j] = ' ';
+        }
+        display_update();
+  }
+
+
+/* adds (second) to end of (first). (first) should be right size */
+void concat(char *first, char *second){
+  while(*first++);
+  while(*first++ = *second++); /* including end 0*/
+}
+
+
+
 /**
 *	Store max 16 chars in textbuffer on line 0..3.
+* Offset from left with x positions.
+* Does not overwrite text buffer before pos x.
 *	Content of textbuffer is used to update display in
 *	function display_update().
 */
-void display_string(int line, char *s) {
+void display_string(int line, char *s, int offset) {
 	int i;
 	if(line < 0 || line >= 4)
 		return;
 	if(!s)
 		return;
 
-	for(i = 0; i < 16; i++)
+	for(i = (0 + offset); i < 16; i++)
 		if(*s) {
 			textbuffer[line][i] = *s;
 			s++;
@@ -108,14 +165,16 @@ void display_string(int line, char *s) {
 }
 
 /*
- Displays a bitmap image with offset (x) from top left corner
+ Displays a bitmap array image (data) with width (w) and offset (x) from top left corner. Height is 32 pxl.
 */
-void display_image(int x, const uint8_t *data) {
+void display_image(int x, int w , const uint8_t *data) {
 	int i, j;
 
 	for(i = 0; i < 4; i++) {
 		DISPLAY_CHANGE_TO_COMMAND_MODE;
+    quicksleep(10);
 
+    /* set row */
 		spi_send_recv(DISPLAY_CMD_SET_PAGE);
 		spi_send_recv(i);
 
@@ -124,24 +183,20 @@ void display_image(int x, const uint8_t *data) {
 		spi_send_recv(0x10 | ((x >> 4) & 0xF)); // set high nybble of column
 
 		DISPLAY_CHANGE_TO_DATA_MODE;
+    quicksleep(10);
 
-    /* storlek för varghuvudet 32 pxl bredd */
-		//for(j = 0; j < 32; j++)  //only 32 pxl atm
-		//	spi_send_recv(~data[i*32 + j]);  //inverted image
-	//}
+		for(j = 0; j < w; j++)
+			spi_send_recv(data[i*w + j]);
+	}
 
-/*  strl för fonten. 128 pxl bredd  */
-/* 4 första raderna
-for(j = 0; j < 128; j++)
- spi_send_recv(~data[i*128 + j]);  //inverted image
-}
-/*
-  /* 4 sista raderna*/
-	for(j = 256; j < 640; j++)
-		spi_send_recv(~data[i*128 + j]);  //inverted image
-}
+  /* Test: För att printa fler rader av fonten. Ändra index pga array längre än displayminnet */
+	// for(j = 256; j < 640; j++)
+	// 	spi_send_recv(~data[i*w + j]);  //NB. inverted image
+  //}
 
 }
+
+
 
 /*
 	Update display with contents of textbuffer, via bitmap font to show text
@@ -149,17 +204,19 @@ for(j = 0; j < 128; j++)
 void display_update(void) {
 	int i, j, k;
 	int c;
-	for(i = 0; i < 4; i++) {
+
+	for(i = 0; i < 4; i++) { /* for each row */
 		DISPLAY_CHANGE_TO_COMMAND_MODE;
+    quicksleep(10);
 		spi_send_recv(DISPLAY_CMD_SET_PAGE);
-		spi_send_recv(i);
+		spi_send_recv(i);  /* set row nbr */
 
 		/* Start at the left column */
 		spi_send_recv(0x0); //set low nybble of column
 		spi_send_recv(0x10); //set high nybble of column
 
 		DISPLAY_CHANGE_TO_DATA_MODE;
-
+    quicksleep(10);
 		for(j = 0; j < 16; j++) {
 			c = textbuffer[i][j];
 			if(c & 0x80)
@@ -193,6 +250,8 @@ static void num32asc( char * s, int n )
 }
 
 
+
+
 /*
    A simple function to create a small delay.
    Very inefficient use of computing resources,
@@ -212,8 +271,8 @@ void quicksleep(int cyc) {
 */
 void display_debug( volatile int * const addr )
 {
-  display_string( 0, "Addr" );
-  display_string( 1, "Data" );
+  display_string( 0, "Addr", 0 );
+  display_string( 1, "Data", 0 );
   num32asc( &textbuffer[0][6], (int) addr );
   num32asc( &textbuffer[1][6], *addr );
   display_update();
@@ -222,8 +281,8 @@ void display_debug( volatile int * const addr )
 
 void display_debug_2( volatile int* addr )
 {
-  display_string( 2, "Addr" );
-  display_string( 3, "Data" );
+  display_string( 2, "Addr" , 0);
+  display_string( 3, "Data", 0 );
   num32asc( &textbuffer[2][6], (int) addr );
   num32asc( &textbuffer[3][6], *addr );
   display_update();
@@ -232,8 +291,8 @@ void display_debug_2( volatile int* addr )
 void display_debug_8( volatile uint8_t* addr )
 {
   int ad = (*addr + 0x0);
-  display_string( 2, "Addr" );
-  display_string( 3, "Data" );
+  display_string( 2, "Addr" , 0);
+  display_string( 3, "Data", 0 );
   num32asc( &textbuffer[2][6], (int) addr );
   num32asc( &textbuffer[3][6], ad );
   display_update();
@@ -243,84 +302,32 @@ void display_debug_8( volatile uint8_t* addr )
 
 
 /*
-  TODO: ANVÄNDS DENNA?
-
- * itoa
- *
+ * itoa - rewritten for max 16 bit unsigned numbers (AN).
+ * Author: Axelsson / Lundevall.
  * Simple conversion routine
  * Converts binary to decimal numbers
  * Returns pointer to (static) char array
  *
  * The integer argument is converted to a string
  * of digits representing the integer in decimal format.
- * The integer is considered signed, and a minus-sign
- * precedes the string of digits if the number is
- * negative.
  *
- * This routine will return a varying number of digits, from
- * one digit (for integers in the range 0 through 9) and up to
- * 10 digits and a leading minus-sign (for the largest negative
- * 32-bit integers).
- *
- * If the integer has the special value
- * 100000...0 (that's 31 zeros), the number cannot be
- * negated. We check for this, and treat this as a special case.
- * If the integer has any other value, the sign is saved separately.
- *
- * If the integer is negative, it is then converted to
- * its positive counterpart. We then use the positive
- * absolute value for conversion.
- *
- * Conversion produces the least-significant digits first,
- * which is the reverse of the order in which we wish to
- * print the digits. We therefore store all digits in a buffer,
- * in ASCII form.
- *
- * To avoid a separate step for reversing the contents of the buffer,
- * the buffer is initialized with an end-of-string marker at the
- * very end of the buffer. The digits produced by conversion are then
- * stored right-to-left in the buffer: starting with the position
- * immediately before the end-of-string marker and proceeding towards
- * the beginning of the buffer.
- *
- * For this to work, the buffer size must of course be big enough
- * to hold the decimal representation of the largest possible integer,
- * and the minus sign, and the trailing end-of-string marker.
- * The value 24 for ITOA_BUFSIZ was selected to allow conversion of
- * 64-bit quantities; however, the size of an int on your current compiler
- * may not allow this straight away.
  */
-#define ITOA_BUFSIZ ( 24 )
-char * itoaconv( int num )
+#define ITOA_BUFSIZ ( 6 )
+char* itoaconv(int num )
 {
-  register int i, sign;
+  register int i;
   static char itoa_buffer[ ITOA_BUFSIZ ];
-  static const char maxneg[] = "-2147483648";
-
-  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;   /* Insert the end-of-string marker. */
-  sign = num;                           /* Save sign. */
-  if( num < 0 && num - 1 > 0 )          /* Check for most negative integer */
+  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;  /* Insert the end-of-string marker. */
   {
-    for( i = 0; i < sizeof( maxneg ); i += 1 )
-    itoa_buffer[ i + 1 ] = maxneg[ i ];
-    i = 0;
-  }
-  else
-  {
-    if( num < 0 ) num = -num;           /* Make number positive. */
-    i = ITOA_BUFSIZ - 2;                /* Location for first ASCII digit. */
+    i = ITOA_BUFSIZ - 2;  /* Location for first ASCII digit. */
     do {
-      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit. */
-      num = num / 10;                   /* Remove digit from number. */
-      i -= 1;                           /* Move index to next empty position. */
+      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit.*/
+      num = num / 10; /* Remove digit from number. */
+      i--;  /* Move index to next empty position. */
     } while( num > 0 );
-    if( sign < 0 )
-    {
-      itoa_buffer[ i ] = '-';
-      i -= 1;
-    }
+
   }
   /* Since the loop always sets the index i to the next empty position,
    * we must add 1 in order to return a pointer to the first occupied position. */
-  return( &itoa_buffer[ i + 1 ] );
+   return(itoa_buffer + i + 1);
 }

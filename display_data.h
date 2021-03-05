@@ -25,8 +25,7 @@
 
 /* ------- bitmap array containing font-------- */
 /*  font[128*8] =  1024 bytes  (twice size of display)
-*  8 bit tall characters, consecutively. Staring with
-*  2 "rows" of black, then symbols, numbers, caps, small letters
+*  8 bit tall characters, consecutively in ascii order.
 */
 
 static const uint8_t const font[1024] = {
@@ -168,6 +167,7 @@ static const uint8_t const font[1024] = {
 	8 bitar (1 kolumn) * 32 st * 4 rader = 8 x 128 bitar tot
   icon[128] = 32*4 bytes (128 kolumner)
 */
+
 static const uint8_t const icon[128] = {
 	255, 255, 255, 255, 255, 255, 127, 187,
 	68, 95, 170, 93, 163, 215, 175, 95,

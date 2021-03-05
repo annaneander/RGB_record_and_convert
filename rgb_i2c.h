@@ -94,16 +94,17 @@ void i2c_stop(void);
 
 /* ---------- end functions from example ----------- */
 
-void rgb_i2c_init( void );
+void i2c_init( void );
 bool hello_rgbc(void);
-uint8_t read_from_reg(uint8_t reg);
-void rgbc_from_reg(uint8_t reg);
+bool i2c_get_rgbc(uint16_t*);
 
-bool get_RGBC(void);
+
+/* ------- local functions ------  */
+uint8_t read_from_reg(uint8_t reg);
+bool read_block(uint8_t reg, int j, uint16_t* data);
 bool write_to_reg(uint8_t reg, uint8_t data);
 
 uint8_t* p_read_from_reg(uint8_t reg);
-
 
 
 #endif
