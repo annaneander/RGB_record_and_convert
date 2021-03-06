@@ -1,9 +1,10 @@
-/* timer.c
-
-   Author: Anna Neander (2021)
-   For copyright and licensing, see file COPYING
-
-   */
+/* * * timer.c
+*
+*   Author: Anna Neander (2021).
+*
+*   For copyright and licensing, see file COPYING
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #include "timer.h"
 

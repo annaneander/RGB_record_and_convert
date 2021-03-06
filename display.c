@@ -1,10 +1,12 @@
 /* * * display.c
-*   Author: F Lundevall (2015), based on code written by Axel Isaksson.
-*   Additions, comments and modifications:  Anna Neander (2021)
+*
+*   Author: Anna Neander (2021). Based on code written by
+*   F Lundevall (2015) and Axel Isaksson.
+*   Written by (AN), modified (AN*).
 *
 *   For copyright and licensing, see file COPYING
 *
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 #include "display.h"
@@ -14,7 +16,7 @@
 char textbuffer[4][16];
 
 
-/* set up display */
+/* set up display  (AN*) */
 void display_init(void) {
 
   /* Output pins for display signals */
@@ -84,28 +86,40 @@ void hello_display(){
 	display_update();
 }
 
+/*to do */
 void display_menu(){
-	display_string(0, "Lightmeter",0);
-	display_string(1, "GB   ", 0);
-	display_string(2, "B RGB  RGB ", 0);
-	display_string(3, " RGB B RGB", 0);
+	display_string(0, "(4) menu ",0);
+	display_string(1, "(3)(2) gain", 0);
+	display_string(2, "(1) save/fetch", 0);
+	display_string(3, "(SW2) 8/16 bit", 0);
 	display_update();
 }
 
-/* update display with 8 (lower) or 16 bit RGBC values */
+void display_save(uint8_t nbr){
+  display_clear();
+	display_string(0, " nice", 7);
+  display_string(1, "color", 7);
+  display_string(2, "#", 9);
+  display_string(2, uitoaconv(nbr), 10);
+  display_string(3, "saved", 7);
+  display_update();
+}
+
+
+/* (AN) update display with 8 (lower) or 16 bit RGBC values */
 void display_rgbc(uint16_t* colors, bool lower){
   char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
   int depth = lower ? 8 : 0; /* divide by 256 to get rgb888 */
   int i;
   for (i = 0; i<4; i++) {
     display_string(i, *(col+i), 0);
-    display_string(i, itoaconv(*(colors+i) >> depth), 4);
+    display_string(i, uitoaconv(*(colors+i) >> depth), 4);
   }
   display_update();
 }
 
 
- /* clear all bits in display and local textbuffer */
+ /* (AN) clear all bits in display and local textbuffer */
   void display_clear(void){
     uint8_t clear[128*5];
     int i;
@@ -115,7 +129,7 @@ void display_rgbc(uint16_t* colors, bool lower){
     display_clr_buffer();
   }
 
-  /* clear local text display buffer */
+  /* (AN) clear local text display buffer */
   void display_clr_buffer(void){
   int i, j;
   for( i = 0; i <4; i++){
@@ -126,7 +140,7 @@ void display_rgbc(uint16_t* colors, bool lower){
   }
 
 
-/* adds (second) to end of (first). (first) should be right size */
+/* (AN) adds (second) to end of (first). (first) should be right size */
 void concat(char *first, char *second){
   while(*first++);
   while(*first++ = *second++); /* including end 0*/
@@ -134,7 +148,7 @@ void concat(char *first, char *second){
 
 
 
-/**
+/** (AN*)
 *	Store max 16 chars in textbuffer on line 0..3.
 * Offset from left with x positions.
 * Does not overwrite text buffer before pos x.
@@ -156,7 +170,7 @@ void display_string(int line, char *s, int offset) {
 			textbuffer[line][i] = ' ';
 }
 
-/*
+/* (AN*)
  Displays a bitmap array image (data) with width (w) and offset (x) from top left corner. Height is 32 pxl.
 */
 void display_image(int x, int w , const uint8_t *data) {
@@ -189,9 +203,57 @@ void display_image(int x, int w , const uint8_t *data) {
 }
 
 
+/*
+ * itoa - rewritten for max 16 bit (2^16 = 65535) unsigned (AN).
+ * Author: Axelsson / Lundevall.
+ * Simple conversion routine
+ * Converts binary to decimal numbers
+ * Returns pointer to (static) char array
+ *
+ * The integer argument is converted to a string
+ * of digits representing the integer in decimal format.
+ *
+ */
+#define ITOA_BUFSIZ ( 6 )
+char* uitoaconv(int num )
+{
+  register int i;
+  static char itoa_buffer[ ITOA_BUFSIZ ];
+  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;  /* Insert the end-of-string marker. */
+  {
+    i = ITOA_BUFSIZ - 2;  /* Location for first ASCII digit. */
+    do {
+      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit.*/
+      num = num / 10; /* Remove digit from number. */
+      i--;  /* Move index to next empty position. */
+    } while( num > 0 );
+
+  }
+  /* Since the loop always sets the index i to the next empty position,
+   * we must add 1 in order to return a pointer to the first occupied position. */
+   return(itoa_buffer + i + 1);
+}
+
+
+// void display_debug_8( volatile uint8_t* addr )
+// {
+//   int ad = (*addr + 0x0);
+//   display_string( 2, "Addr" , 0);
+//   display_string( 3, "Data", 0 );
+//   num32asc( &textbuffer[2][6], (int) addr );
+//   num32asc( &textbuffer[3][6], ad );
+//   display_update();
+// }
+
+
+
+
+/* ---------- Below all written by Isaksson / Lundevall ------------ */
+
 
 /*
-	Update display with contents of textbuffer, via bitmap font to show text
+	Update display with contents of textbuffer,
+  via bitmap font to show text
 */
 void display_update(void) {
 	int i, j, k;
@@ -243,7 +305,6 @@ static void num32asc( char * s, int n )
 
 
 
-
 /*
    A simple function to create a small delay.
    Very inefficient use of computing resources,
@@ -252,7 +313,6 @@ void quicksleep(int cyc) {
 	int i;
 	for(i = cyc; i > 0; i--);
 }
-
 
 
 /*
@@ -278,48 +338,4 @@ void display_debug_2( volatile int* addr )
   num32asc( &textbuffer[2][6], (int) addr );
   num32asc( &textbuffer[3][6], *addr );
   display_update();
-}
-
-void display_debug_8( volatile uint8_t* addr )
-{
-  int ad = (*addr + 0x0);
-  display_string( 2, "Addr" , 0);
-  display_string( 3, "Data", 0 );
-  num32asc( &textbuffer[2][6], (int) addr );
-  num32asc( &textbuffer[3][6], ad );
-  display_update();
-}
-
-
-
-
-/*
- * itoa - rewritten for max 16 bit unsigned numbers (AN).
- * Author: Axelsson / Lundevall.
- * Simple conversion routine
- * Converts binary to decimal numbers
- * Returns pointer to (static) char array
- *
- * The integer argument is converted to a string
- * of digits representing the integer in decimal format.
- *
- */
-#define ITOA_BUFSIZ ( 6 )
-char* itoaconv(int num )
-{
-  register int i;
-  static char itoa_buffer[ ITOA_BUFSIZ ];
-  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;  /* Insert the end-of-string marker. */
-  {
-    i = ITOA_BUFSIZ - 2;  /* Location for first ASCII digit. */
-    do {
-      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit.*/
-      num = num / 10; /* Remove digit from number. */
-      i--;  /* Move index to next empty position. */
-    } while( num > 0 );
-
-  }
-  /* Since the loop always sets the index i to the next empty position,
-   * we must add 1 in order to return a pointer to the first occupied position. */
-   return(itoa_buffer + i + 1);
 }

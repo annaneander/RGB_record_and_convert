@@ -9,11 +9,14 @@
 
 #include "main.h"
 
-int timeout = 0x0;
+int timeout = 0;
 uint16_t colors[4] = {0}; /* buffer - 16 bit color values of CRGB */
-uint8_t fav_colors[20][4] = {0}; /* 20 favorite colors can be saved */
+uint16_t fav_colors[20][4] = {0}; /* 20 favorite colors can be saved */
+static uint8_t number_colors = 0;
 
 bool rgb888 = 0; /* display 8 or 16 bit */
+bool save = 0; /* save color menu */
+bool menu = 0; /* display menu */
 
 int main(void) {
 
@@ -42,9 +45,8 @@ int main(void) {
 
 		//quicksleep(40000000);
 
-		while( 1 )
+		while( 1 ) //!timeout ?
 		{
-
 			/*get value of 16 bit rgbc */
 			status = i2c_get_rgbc(colors);
 
@@ -55,7 +57,32 @@ int main(void) {
 
 			quicksleep(100000);
 
-			/* save values */
+			/* save values in array for now */
+			if (save && number_colors < 20){
+				*fav_colors[number_colors] = *colors;
+				display_save(++number_colors);
+				while (save);
+				}
+
+			/* menu */
+				if (menu){
+					display_menu();
+						/* fetch saved values  */
+						if (save){
+							display_string(0,"display clo",0);
+							display_update();
+							quicksleep(4000000);
+							int i;
+							for(i = 0; i<number_colors; i++){
+							display_rgbc(fav_colors[i] , rgb888);
+							//delay
+
+						}
+
+						}
+					}
+					while (menu);
+
 
 		}
 
@@ -68,11 +95,6 @@ int main(void) {
 		display_debug_2(&I2C1CON); //0x73  recieved ??
 		//display_debug(&I2C1RCV);
 		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
-		/* 12 bit matters if 6 of i2ccon. enbl clockstretch* /
-
-		/* prova sätta clock stretch. annars restart
-		-- >(&I2C1CON) = 9060 = nack recieved */
-
 
 		//display_debug_2(&I2C1STAT)  --> 08008 = start/restart och nack
 
@@ -114,25 +136,31 @@ Then baud rates for SPI & I2C need to be changed as well. */
 /* SW1 (2)= INT1; SW2 (7) = INT2; SW3 (8) = INT3; SW4 (35) = INT4 */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */
 
-/* Interrupt Service Routine*/
-/* ATM: Lite Tester*/
-void user_isr( void ) {
+/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
+SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
+SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
 
+*/
+
+/* Interrupt Service Routine*/
+void user_isr( void ) {
 
 	if (IFS(0) & 1 << 8) {  /* timer 2 timeout 1/10 sek */
 
-		//display_rgbc(colors, rgb888); /* update display 10 ggn sek */
-
 		/* get input from buttons */
 		int buttons = getbtns();
-		if (buttons & 1)
-			display_string(0,"knapp 1 ", 0);
+		save = (buttons & 1); /* save color */
+
 		if (buttons & 2)
 			display_string(0,"knapp 2 ", 0);
+			/* decrease gain ?  */
 		if (buttons & 4)
+			/*  increase gain ? */
 			display_string(0,"knapp 3 ", 0);
-		if (buttons & 8)
-			display_string(0,"knapp 4 ", 0);
+
+		menu = (buttons & 8);
+			/* display menu ?*/
+
 		timeout++;
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
@@ -143,11 +171,7 @@ void user_isr( void ) {
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
 
 	}
-	if (timeout == 20) { /*  2/sek  */
-		//display_string(0, "timeout" );
-		//display_update();
-		//display_image(0, font);
-		//quicksleep(3000000);
+	if (timeout == 10) { /*  1 sek  */
 		timeout = 0;
 	}
 

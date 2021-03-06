@@ -1,14 +1,15 @@
-/* rgb_i2c.h
-
-	 Author: Anna Neander (2021)
-	 Based on example from https://github.com/is1200-example-projects/hello-temperature
-   written by Axel Isaksson.
-
-   For copyright and licensing, see file COPYING
-
-   7 bit I2C adressing protocol with apds9960 sensor at address 0x39
-
-*/
+/* * * rgb_i2c.h * * *
+*  Author: Anna Neander (2021).
+*  Based on example written by Axel Isaksson:
+*  https://github.com/is1200-example-projects/hello-temperature
+*  Written by (AN), modified (AN*).
+*
+*  Sensor APDS9960 @ 0x39; Max 400 kHz
+*  7 bit I2C adressing protocol.
+*
+*  For copyright and licensing, see file COPYING
+*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 #ifndef RGB_SENSOR_I2C_H
@@ -84,7 +85,7 @@
 
 
 
-/* ---------- start functions from example ----- */
+/* ---------- by A. Isaksson (AN*)-------- */
 void i2c_idle(void);
 bool i2c_send(uint8_t data);
 void i2c_recv(void);
@@ -94,7 +95,7 @@ void i2c_start(void);
 void i2c_restart(void);
 void i2c_stop(void);
 
-/* ---------- end functions from example ----------- */
+/* ---------- end by A. Isaksson ----------- */
 
 void i2c_init( void );
 bool hello_rgbc(void);

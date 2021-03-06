@@ -1,8 +1,8 @@
- /* * * rgb_i2c.h * * *
+ /* * * rgb_i2c.c * * *
  *  Author: Anna Neander (2021).
  *  Based on example written by Axel Isaksson:
  *  https://github.com/is1200-example-projects/hello-temperature
- *
+ *  Written by (AN), modified (AN*).
  *
  *  Sensor APDS9960 @ 0x39; Max 400 kHz
  *
@@ -31,16 +31,17 @@ void i2c_init(void){
 	Change to 80 Mhz --> BRG: 0x018A --> 100 kHz */
 	I2C1BRG = 0x00C5;   /* baud rate generator clk --> 100 kHz*/
 	I2C1STAT = 0x0;    /* clear acken, recieve, stop, restart, start */
-  //CLKSTRETCH;  /* enbl clockstretch ta ev bort denna*/
+  //CLKSTRETCH;  /* enbl clockstretch; only in slave mode!*/
 //	I2C1CONSET = 1 << 13;   /* Stop in idle mode */
 	I2C1CONSET = 1 << 15;   /* Turn on i2c. Sets pins to tri-state */
 
 	/* ---------------------------- */
 
-  /* Enable external interrupts to pin 2. INT1. Pin2 is input by default */
+  /* Enable external interrupts to pin 2 - INT1. Pin2 is input by default - obs samma som SW2  */
   // flagga: IFS(0) <7>
   // enable: IEC(0) <7>
   // prio: IPC1 <28:26>  ; sub: <25:24>
+
 
 
 	/* ----- write to control registers in sensor ----- */
@@ -63,6 +64,7 @@ void i2c_init(void){
   write_to_reg(ENABLE, 0xB); /* Wait, Start  */
 }
 
+/*  address should be here?  I2C1ADD */
 
 /* check if the right sensor is connected */
 bool hello_rgbc(){
@@ -70,14 +72,13 @@ bool hello_rgbc(){
   if (!status && BCL){ /* check busscollision */
     /* also check write to trn-collision WRCOL? */
 
-        //I2C1CONCLR = 1 << 12;  /* clockstretch */
-        I2C1CONCLR = 1 << 15;/*turn i2c off*/
+        I2C1CONCLR = 1 << 15;/*turn i2c off -> i/o bits controlled by PORT functs*/
         quicksleep(10000);
         i2c_init(); /*detta funkar men nödvändigt? */
-        //I2C1CONCLR = 1 << 15;/*turn i2c off*/
+        //I2C1CONCLR = 1 << 15;/*turn i2c off  */
         quicksleep(10000);
         //i2c_start();
-        //I2C1CONSET = 1 << 15; /*turn i2c on*/
+        //I2C1CONSET = 1 << 15; /*turn i2c on -> SDA & SCL as tristate ports, controlled by I2C module*/
         //quicksleep(100);
   }
   status = (read_from_reg(RGBC_ID) == 0xAB);
