@@ -2,7 +2,7 @@
    This code compiled 2015 by F Lundevall
    from original code written by Axel Isaksson
 
-	 Added some comments and renaaming: Anna Neander (2021)
+   Added some comments and renaaming: Anna Neander (2021)
 
    For copyright and licensing, see file COPYING */
 
@@ -14,19 +14,19 @@
 
 
 /*
-	Display is 128 x 32  = 4096 pxl --> 512 bytes
-	Display is organised in memory as a bytearray,
-	with each byte representing a column.
-	Display is further divided into 4 pages (rows)
-	of 128 (??) columns each.
-	Updates to display are sent as data-commands.
-*/
+   Display is 128 x 32  = 4096 pxl --> 512 bytes
+   Display is organised in memory as a bytearray,
+   with each byte representing a column.
+   Display is further divided into 4 pages (rows)
+   of 128 (??) columns each.
+   Updates to display are sent as data-commands.
+ */
 
 
 /* ------- bitmap array containing font-------- */
 /*  font[128*8] =  1024 bytes  (twice size of display)
-*  8 bit tall characters, consecutively in ascii order.
-*/
+ *  8 bit tall characters, consecutively in ascii order.
+ */
 
 static const uint8_t const font[1024] = {
 	0, 0, 0, 0, 0, 0, 0, 0,
@@ -163,10 +163,10 @@ static const uint8_t const font[1024] = {
 
 
 /*
-	Björnhuvudet  (32x32 pxl bitmap)
-	8 bitar (1 kolumn) * 32 st * 4 rader = 8 x 128 bitar tot
-  icon[128] = 32*4 bytes (128 kolumner)
-*/
+   Björnhuvudet  (32x32 pxl bitmap)
+   8 bitar (1 kolumn) * 32 st * 4 rader = 8 x 128 bitar tot
+   icon[128] = 32*4 bytes (128 kolumner)
+ */
 
 static const uint8_t const icon[128] = {
 	255, 255, 255, 255, 255, 255, 127, 187,

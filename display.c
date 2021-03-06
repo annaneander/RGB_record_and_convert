@@ -1,12 +1,12 @@
 /* * * display.c
-*
-*   Author: Anna Neander (2021). Based on code written by
-*   F Lundevall (2015) and Axel Isaksson.
-*   Written by (AN), modified (AN*).
-*
-*   For copyright and licensing, see file COPYING
-*
-* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+ *
+ *   Author: Anna Neander (2021). Based on code written by
+ *   F Lundevall (2015) and Axel Isaksson.
+ *   Written by (AN), modified (AN*).
+ *
+ *   For copyright and licensing, see file COPYING
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
 #include "display.h"
@@ -19,27 +19,27 @@ char textbuffer[4][16];
 /* set up display  (AN*) */
 void display_init(void) {
 
-  /* Output pins for display signals */
-  PORTF = 0xFFFF;
-  PORTG = (1 << 9);
-  ODCF = 0x0;
-  ODCG = 0x0;
-  TRISFCLR = (0x7 << 4);
-  TRISGCLR = (1 << 9);
+	/* Output pins for display signals */
+	PORTF = 0xFFFF;
+	PORTG = (1 << 9);
+	ODCF = 0x0;
+	ODCG = 0x0;
+	TRISFCLR = (0x7 << 4);
+	TRISGCLR = (1 << 9);
 
-  /* Example from chipkit ref: Baudrate of 15 -> 8Mhz, with 80Mhz PBCLK clock */
+	/* Example from chipkit ref: Baudrate of 15 -> 8Mhz, with 80Mhz PBCLK clock */
 
-  /* Set up SPI as controller on port 2 */
-  SPI2CON = 0;  /* turn off and reset control  */
-  SPI2BRG = 4;  /* --> 10Mhz; which is max for shield display  */
-  /*SPI2BRG = 15; //8Mhz, with 80Mhz PB clock  */
-  SPI2STATCLR = (1 << 6);  /* SPI2STAT bit SPIROV = 0; No overflow */
-  SPI2CONSET = (1 << 6);  /* SPI2CON bit CKP = 1; Idle = Clock is low */
-  SPI2CONSET = (1 << 5);  /* SPI2CON bit MSTEN = 1;  Master/Controller */
-  SPI2CONSET = (1 << 15); /* SPI2CON bit ON = 1;  PON */
+	/* Set up SPI as controller on port 2 */
+	SPI2CON = 0;  /* turn off and reset control  */
+	SPI2BRG = 4;  /* --> 10Mhz; which is max for shield display  */
+	/*SPI2BRG = 15; //8Mhz, with 80Mhz PB clock  */
+	SPI2STATCLR = (1 << 6);  /* SPI2STAT bit SPIROV = 0; No overflow */
+	SPI2CONSET = (1 << 6);  /* SPI2CON bit CKP = 1; Idle = Clock is low */
+	SPI2CONSET = (1 << 5);  /* SPI2CON bit MSTEN = 1;  Master/Controller */
+	SPI2CONSET = (1 << 15); /* SPI2CON bit ON = 1;  PON */
 
 
-  DISPLAY_CHANGE_TO_COMMAND_MODE;
+	DISPLAY_CHANGE_TO_COMMAND_MODE;
 	quicksleep(10);
 	DISPLAY_ACTIVATE_VDD;
 	quicksleep(1000000);
@@ -65,12 +65,12 @@ void display_init(void) {
 	quicksleep(10000000);
 
 	/* Invert the display. This puts the display origin
-	in the upper left corner. */
+	   in the upper left corner. */
 	spi_send_recv(0xA1); /* remap columns */
 	spi_send_recv(0xC8); /* remap rows */
 
 	/* Select sequential COM configuration. This makes the display memory
-	non-interleaved.*/
+	   non-interleaved.*/
 	spi_send_recv(0xDA);
 	spi_send_recv(0x20);
 
@@ -86,75 +86,75 @@ void hello_display(){
 	display_update();
 }
 
-/*to do */
+
 void display_menu(){
-	display_string(0, "(4) menu ",0);
-	display_string(1, "(3)(2) gain", 0);
-	display_string(2, "(1) save/fetch", 0);
-	display_string(3, "(SW2) 8/16 bit", 0);
+	display_string(0, "(SW2): 8/16 bit",0);
+	display_string(1, "(3)(2): gain ", 0);
+	display_string(2, "(1): save", 0);
+	display_string(3, "(4)+(1): fetch", 0);
 	display_update();
 }
 
 void display_save(uint8_t nbr){
-  display_clear();
+	display_clear();
 	display_string(0, " nice", 7);
-  display_string(1, "color", 7);
-  display_string(2, "#", 9);
-  display_string(2, uitoaconv(nbr), 10);
-  display_string(3, "saved", 7);
-  display_update();
+	display_string(1, "color", 7);
+	display_string(2, "#", 9);
+	display_string(2, uitoaconv(nbr), 10);
+	display_string(3, "saved", 7);
+	display_update();
 }
 
 
 /* (AN) update display with 8 (lower) or 16 bit RGBC values */
 void display_rgbc(uint16_t* colors, bool lower){
-  char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
-  int depth = lower ? 8 : 0; /* divide by 256 to get rgb888 */
-  int i;
-  for (i = 0; i<4; i++) {
-    display_string(i, *(col+i), 0);
-    display_string(i, uitoaconv(*(colors+i) >> depth), 4);
-  }
-  display_update();
+	char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
+	int depth = lower ? 8 : 0; /* divide by 256 to get rgb888 */
+	int i;
+	for (i = 0; i<4; i++) {
+		display_string(i, *(col+i), 0);
+		display_string(i, uitoaconv(*(colors+i) >> depth), 4);
+	}
+	display_update();
 }
 
 
- /* (AN) clear all bits in display and local textbuffer */
-  void display_clear(void){
-    uint8_t clear[128*5];
-    int i;
-    for (i = 0; i<128*5 ; i++)
-        clear[i] = 0x00;
-    display_image(0, 128, clear);
-    display_clr_buffer();
-  }
+/* (AN) clear all bits in display and local textbuffer */
+void display_clear(void){
+	uint8_t clear[128*5];
+	int i;
+	for (i = 0; i<128*5; i++)
+		clear[i] = 0x00;
+	display_image(0, 128, clear);
+	display_clr_buffer();
+}
 
-  /* (AN) clear local text display buffer */
-  void display_clr_buffer(void){
-  int i, j;
-  for( i = 0; i <4; i++){
-      for(j = 0; j<16; j++)
-         textbuffer[i][j] = ' ';
-        }
-        display_update();
-  }
+/* (AN) clear local text display buffer */
+void display_clr_buffer(void){
+	int i, j;
+	for( i = 0; i <4; i++) {
+		for(j = 0; j<16; j++)
+			textbuffer[i][j] = ' ';
+	}
+	display_update();
+}
 
 
 /* (AN) adds (second) to end of (first). (first) should be right size */
 void concat(char *first, char *second){
-  while(*first++);
-  while(*first++ = *second++); /* including end 0*/
+	while(*first++);
+	while(*first++ = *second++); /* including end 0*/
 }
 
 
 
 /** (AN*)
-*	Store max 16 chars in textbuffer on line 0..3.
-* Offset from left with x positions.
-* Does not overwrite text buffer before pos x.
-*	Content of textbuffer is used to update display in
-*	function display_update().
-*/
+ * Store max 16 chars in textbuffer on line 0..3.
+ * Offset from left with x positions.
+ * Does not overwrite text buffer before pos x.
+ * Content of textbuffer is used to update display in
+ * function display_update().
+ */
 void display_string(int line, char *s, int offset) {
 	int i;
 	if(line < 0 || line >= 4)
@@ -171,16 +171,17 @@ void display_string(int line, char *s, int offset) {
 }
 
 /* (AN*)
- Displays a bitmap array image (data) with width (w) and offset (x) from top left corner. Height is 32 pxl.
-*/
-void display_image(int x, int w , const uint8_t *data) {
+   Displays a bitmap array image (data) with width (w) and offset (x)
+   from top left corner. Height is 32 pxl.
+ */
+void display_image(int x, int w, const uint8_t *data) {
 	int i, j;
 
 	for(i = 0; i < 4; i++) {
 		DISPLAY_CHANGE_TO_COMMAND_MODE;
-    quicksleep(10);
+		quicksleep(10);
 
-    /* set row */
+		/* set row */
 		spi_send_recv(DISPLAY_CMD_SET_PAGE);
 		spi_send_recv(i);
 
@@ -189,17 +190,16 @@ void display_image(int x, int w , const uint8_t *data) {
 		spi_send_recv(0x10 | ((x >> 4) & 0xF)); // set high nybble of column
 
 		DISPLAY_CHANGE_TO_DATA_MODE;
-    quicksleep(10);
+		quicksleep(10);
 
 		for(j = 0; j < w; j++)
 			spi_send_recv(data[i*w + j]);
 	}
 
-  /* Test: För att printa fler rader av fonten. Ändra index pga array längre än displayminnet */
+	/* Test: För att printa fler rader av fonten. Ändra index pga array längre än displayminnet */
 	// for(j = 256; j < 640; j++)
 	// 	spi_send_recv(~data[i*w + j]);  //NB. inverted image
-  //}
-
+	//}
 }
 
 
@@ -217,21 +217,21 @@ void display_image(int x, int w , const uint8_t *data) {
 #define ITOA_BUFSIZ ( 6 )
 char* uitoaconv(int num )
 {
-  register int i;
-  static char itoa_buffer[ ITOA_BUFSIZ ];
-  itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;  /* Insert the end-of-string marker. */
-  {
-    i = ITOA_BUFSIZ - 2;  /* Location for first ASCII digit. */
-    do {
-      itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit.*/
-      num = num / 10; /* Remove digit from number. */
-      i--;  /* Move index to next empty position. */
-    } while( num > 0 );
+	register int i;
+	static char itoa_buffer[ ITOA_BUFSIZ ];
+	itoa_buffer[ ITOA_BUFSIZ - 1 ] = 0;  /* Insert the end-of-string marker. */
+	{
+		i = ITOA_BUFSIZ - 2;  /* Location for first ASCII digit. */
+		do {
+			itoa_buffer[ i ] = num % 10 + '0';/* Insert next digit.*/
+			num = num / 10; /* Remove digit from number. */
+			i--;  /* Move index to next empty position. */
+		} while( num > 0 );
 
-  }
-  /* Since the loop always sets the index i to the next empty position,
-   * we must add 1 in order to return a pointer to the first occupied position. */
-   return(itoa_buffer + i + 1);
+	}
+	/* Since the loop always sets the index i to the next empty position,
+	 * we must add 1 in order to return a pointer to the first occupied position. */
+	return(itoa_buffer + i + 1);
 }
 
 
@@ -252,16 +252,16 @@ char* uitoaconv(int num )
 
 
 /*
-	Update display with contents of textbuffer,
-  via bitmap font to show text
-*/
+   Update display with contents of textbuffer,
+   via bitmap font to show text
+ */
 void display_update(void) {
 	int i, j, k;
 	int c;
 
 	for(i = 0; i < 4; i++) { /* for each row */
 		DISPLAY_CHANGE_TO_COMMAND_MODE;
-    quicksleep(10);
+		quicksleep(10);
 		spi_send_recv(DISPLAY_CMD_SET_PAGE);
 		spi_send_recv(i);  /* set row nbr */
 
@@ -270,7 +270,7 @@ void display_update(void) {
 		spi_send_recv(0x10); //set high nybble of column
 
 		DISPLAY_CHANGE_TO_DATA_MODE;
-    quicksleep(10);
+		quicksleep(10);
 		for(j = 0; j < 16; j++) {
 			c = textbuffer[i][j];
 			if(c & 0x80)
@@ -284,9 +284,9 @@ void display_update(void) {
 
 
 /*
-	helper function
- 	send one byte to update display
-*/
+   helper function
+   send one byte to update display
+ */
 uint8_t spi_send_recv(uint8_t data) {
 	while(!(SPI2STAT & 0x08));
 	SPI2BUF = data;  /* update display buffer with one byte*/
@@ -298,9 +298,9 @@ uint8_t spi_send_recv(uint8_t data) {
    Converts a number to hexadecimal ASCII digits. */
 static void num32asc( char * s, int n )
 {
-  int i;
-  for( i = 28; i >= 0; i -= 4 )
-    *s++ = "0123456789ABCDEF"[ (n >> i) & 15 ];
+	int i;
+	for( i = 28; i >= 0; i -= 4 )
+		*s++ = "0123456789ABCDEF"[ (n >> i) & 15 ];
 }
 
 
@@ -320,22 +320,22 @@ void quicksleep(int cyc) {
    The two middle lines of the display show
    an address and its current contents.
    Parameter: the address to read and display.
-*/
+ */
 void display_debug( volatile int * const addr )
 {
-  display_string( 0, "Addr", 0 );
-  display_string( 1, "Data", 0 );
-  num32asc( &textbuffer[0][6], (int) addr );
-  num32asc( &textbuffer[1][6], *addr );
-  display_update();
+	display_string( 0, "Addr", 0 );
+	display_string( 1, "Data", 0 );
+	num32asc( &textbuffer[0][6], (int) addr );
+	num32asc( &textbuffer[1][6], *addr );
+	display_update();
 }
 
 
 void display_debug_2( volatile int* addr )
 {
-  display_string( 2, "Addr" , 0);
-  display_string( 3, "Data", 0 );
-  num32asc( &textbuffer[2][6], (int) addr );
-  num32asc( &textbuffer[3][6], *addr );
-  display_update();
+	display_string( 2, "Addr", 0);
+	display_string( 3, "Data", 0 );
+	num32asc( &textbuffer[2][6], (int) addr );
+	num32asc( &textbuffer[3][6], *addr );
+	display_update();
 }

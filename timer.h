@@ -9,13 +9,13 @@
 
 /*
   Timer: Initialise go
-  TMR2ERIOD = clk_frequency / prescaler /timeout_frequency
+  TMR2ERIOD = clk_frequency / prescaler /timeout_frequency = 312 
   timeout_frequency = 100 ms = 0.1 sek
 */
 
 #define CLOCKFREQ 80000000   /* 80MHz */
 #define PRESCALER 256       /*  */
-#define TIMEOUTFREQ 10  /* T: 100 ms (0.1 sek) -> f: 10 */
+#define TIMEOUTFREQ 100  /* T: 1000 ms (0.01 sek) -> f: 100 */
 
 #define TMR2PERIOD ((CLOCKFREQ / PRESCALER) / TIMEOUTFREQ)
 #if TMR2PERIOD > 0xffff
