@@ -7,16 +7,14 @@
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 
-#include <stdint.h>   /* Declarations of uint_32 and the like */
-#include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include "display.h"
 #include "display_data.h"
 
+/* Text buffer for display output */
 char textbuffer[4][16];
 
-/*
- 	set up display
-*/
+
+/* set up display */
 void display_init(void) {
 
   /* Output pins for display signals */
@@ -78,7 +76,6 @@ void display_init(void) {
 	spi_send_recv(0xAF);
 }
 
-
 void hello_display(){
 	display_string(0, "RGB RGB RGB RGB ",0);
 	display_string(1, "GB RGB RGB RGB RG", 0);
@@ -87,27 +84,22 @@ void hello_display(){
 	display_update();
 }
 
-
-/* update display with 16 bit RGBC values */
-void display_rgbc(uint16_t* colors){
-  char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
-  int i;
-
-  for (i = 0; i<4; i++) {
-    display_string(i, *(col+i), 0);
-    display_string(i, itoaconv(*(colors+i)), 4);
-  }
-  display_update();
+void display_menu(){
+	display_string(0, "Lightmeter",0);
+	display_string(1, "GB   ", 0);
+	display_string(2, "B RGB  RGB ", 0);
+	display_string(3, " RGB B RGB", 0);
+	display_update();
 }
 
-/* update display with 8 bit color values */
-void display_rgbc_8(uint16_t* colors){
+/* update display with 8 (lower) or 16 bit RGBC values */
+void display_rgbc(uint16_t* colors, bool lower){
   char *col[4] = {"LUX: ","  R: ", "  G: ", "  B: "};
+  int depth = lower ? 8 : 0; /* divide by 256 to get rgb888 */
   int i;
-
   for (i = 0; i<4; i++) {
     display_string(i, *(col+i), 0);
-    display_string(i, itoaconv(*(colors+i)), 4);
+    display_string(i, itoaconv(*(colors+i) >> depth), 4);
   }
   display_update();
 }

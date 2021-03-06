@@ -10,8 +10,10 @@
 #include "main.h"
 
 int timeout = 0x0;
-uint16_t colors[4] = {0}; /* 16 bit color values of CRGB */
-uint8_t colors_8[4] = {0}; /* 8 bit color values of CRGB */
+uint16_t colors[4] = {0}; /* buffer - 16 bit color values of CRGB */
+uint8_t fav_colors[20][4] = {0}; /* 20 favorite colors can be saved */
+
+bool rgb888 = 0; /* display 8 or 16 bit */
 
 int main(void) {
 
@@ -24,26 +26,32 @@ int main(void) {
 	enable_interrupt();
 	hello_display();
 
+	quicksleep(4000000);
+	/*   use clock delay ? */
+
 	/* TODO ?: use timer interrupt for something */
 	if(hello_rgbc()) {
-		quicksleep(4000000);
+
 		display_string(0, "sensor connected",0);
 		display_update();
-		quicksleep(4000000);
+		//quicksleep(4000000);
+		//while(timeout);
 		display_clear();
+
 		/* display some menu */
 
 		//quicksleep(40000000);
 
 		while( 1 )
 		{
+
 			/*get value of 16 bit rgbc */
 			status = i2c_get_rgbc(colors);
 
 			/*perform conversions * /
 
 			/* update display*/
-			display_rgbc(colors);
+			display_rgbc(colors, rgb888);
 
 			quicksleep(100000);
 
@@ -55,6 +63,21 @@ int main(void) {
 	else {
 		display_string(3, "not connected",0);
 		display_update();
+
+		display_debug(&I2C1STAT);  //0x400  buss collison.
+		display_debug_2(&I2C1CON); //0x73  recieved ??
+		//display_debug(&I2C1RCV);
+		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
+		/* 12 bit matters if 6 of i2ccon. enbl clockstretch* /
+
+		/* prova sätta clock stretch. annars restart
+		-- >(&I2C1CON) = 9060 = nack recieved */
+
+
+		//display_debug_2(&I2C1STAT)  --> 08008 = start/restart och nack
+
+
+
 		quicksleep(4000000);
 
 	}
@@ -88,14 +111,18 @@ Then baud rates for SPI & I2C need to be changed as well. */
 
 
 
-/* INT0 = INT1 = 2; INT2 = 7;  INT3 =  INT4 = 35  INT*/
+/* SW1 (2)= INT1; SW2 (7) = INT2; SW3 (8) = INT3; SW4 (35) = INT4 */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */
 
 /* Interrupt Service Routine*/
 /* ATM: Lite Tester*/
 void user_isr( void ) {
-	timeout++;
-	if (IFS(0) & 1 << 8) {  /* timer 2*/
+
+
+	if (IFS(0) & 1 << 8) {  /* timer 2 timeout 1/10 sek */
+
+		//display_rgbc(colors, rgb888); /* update display 10 ggn sek */
+
 		/* get input from buttons */
 		int buttons = getbtns();
 		if (buttons & 1)
@@ -106,18 +133,17 @@ void user_isr( void ) {
 			display_string(0,"knapp 3 ", 0);
 		if (buttons & 8)
 			display_string(0,"knapp 4 ", 0);
-		//display_update();
-		quicksleep(10000);
+		timeout++;
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
 
 	if (IFS(0) & 1 << 11) { /* sw2 */
-		display_string(0, "sw2", 0);
-		//display_update();
-		quicksleep(1000000);
+		/* toogle 16 / 8 bit color value display*/
+		rgb888 = !rgb888;
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
+
 	}
-	if (timeout == 10) {
+	if (timeout == 20) { /*  2/sek  */
 		//display_string(0, "timeout" );
 		//display_update();
 		//display_image(0, font);

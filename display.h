@@ -11,7 +11,8 @@
 
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
-//#include "main.h"
+#include <stdbool.h>
+
 //#include "display_data.h"
 
 
@@ -37,7 +38,7 @@ void display_image(int x, int w, const uint8_t *data);
 void display_string(int line, char *s, int offset);
 void display_update(void);
 void hello_display(void);
-void display_rgbc(uint16_t* colors);
+void display_rgbc(uint16_t* colors, bool lower);
 void display_clear(void);
 void display_clr_buffer(void);
 
@@ -56,5 +57,6 @@ char* itoaconv(int num);
 void concat(char *first, char *second);
 static void uint16_t_asc( char * s, int n );
 
+volatile int* debug;
 
 #endif

@@ -23,8 +23,6 @@
 #endif
 
 
-
-
 void timer_init( void );
 
 

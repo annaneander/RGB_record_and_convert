@@ -17,6 +17,7 @@
 /*  internal I2C registers and bits */
 #define I2CRCV   (I2C1RCV)
 #define I2CTRN   (I2C1TRN)
+#define I2CCON   (I2C1CON)
 #define ACKSTAT  (I2C1STAT & (1 << 15))
 #define TRSSTAT  (I2C1STAT & (1 << 14))
 #define CL_OVERFLOW (I2C1STATCLR = 1 << 6)
@@ -30,6 +31,7 @@
 #define ACK (I2C1CONCLR = 1 << 5)
 #define NACK (I2C1CONSET = 1 << 5)
 #define RCVENBL (I2C1CONSET = 1 << 3)
+#define CLKSTRETCH (I2C1CONSET = 1 << 6)
 
 
 /* ------- Sensor registers ----------- */
