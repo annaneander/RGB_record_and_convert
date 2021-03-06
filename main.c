@@ -10,14 +10,17 @@
 #include "main.h"
 #define MAX_COLORS (20)/* max number of colors to save */
 
-uint8_t timeout = 0;
+uint8_t timeouts = 0; /* nbr of timer2 timeouts */
+bool ready = 0; /* 1/10 sek has passed */
 uint16_t colors[4] = {0}; /* buffer - 16 bit color values of CRGB */
 uint16_t fav_colors[MAX_COLORS][4] = {0}; /* 20 favorite colors can be saved */
-static uint8_t number_colors = 0; // behöver denna vara static?
+static uint8_t number_colors = 0;
 
 bool rgb888 = 0; /* display 8 or 16 bit */
 bool save = 0; /* save color menu */
 bool menu = 0; /* display menu */
+bool gain_plus = 0;
+bool gain_minus = 0;
 
 int main(void) {
 
@@ -28,77 +31,80 @@ int main(void) {
 	timer_init();
 	i2c_init();
 	enable_interrupt();
-	hello_display();
+	quicksleep(100);
 
-	quicksleep(4000000);
-	/*   use clock delay ? */
+	if(hello_rgbc()) {
 
-	/* TODO ?: use timer interrupt for something */
-	if(hello_rgbc()) { /* TODO: while && SW1 --> manual mode */
+		while (1) {
 
-		display_string(0, "sensor connected",0);
-		display_update();
-		//quicksleep(4000000);
-		//while(timeout);
-		display_clear();
-		/* display some menu */
+			//hello_display();
 
-		//quicksleep(40000000);
+			while(ready) /* update values and display every 1/20 sek */
+			{
+				/*get value of 16 bit rgbc */
+				status = i2c_get_rgbc(colors);
 
-	while( 1 )   //!timeout ?
-{
-	/*get value of 16 bit rgbc */
-	status = i2c_get_rgbc(colors);
-	/*perform conversions * /
+				/* update display*/
+				display_rgbc(colors, rgb888);
 
-	   /* update display*/
-	display_rgbc(colors, rgb888);
-	quicksleep(100000);
+				//quicksleep(10000);
 
-	/* save values in array for now */
-	if (save && (number_colors < MAX_COLORS)) { /* if button 4 is down */
-		int i;
-		for(i = 0; i<4; i++) {
-			*(fav_colors[number_colors]+i) = *(colors+i);
-		}
-		display_save(++number_colors);
-		while (save); /* while button 4 is down */
-	}
+				/* ----- save values in array for now ----- */
+				if (save && (number_colors < MAX_COLORS)) { /* if button 4 is down */
+					int i;
+					for(i = 0; i<4; i++) {
+						*(fav_colors[number_colors]+i) = *(colors+i);
+					}
+					display_save(++number_colors);
+					while (save); /* while button 4 is down */
+				}
 
-	/* menu */
-	bool fetching = 0;
-	int counter = 0;
-	while (menu) {  /* while button 1 is down */
-		!fetching && display_menu();
+				/* ----- menu ---- */
+				bool fetching = 0;
+				int counter = 0;
+				while (menu) { /* while button 1 is down */
+					!fetching && display_menu();
 
-		/* fetch saved values colors_saved  */
-		if (**fav_colors && save) { /*if there are some saved colors */
-			fetching = 1;
-			display_rgbc(*(fav_colors+counter), 1); /* show 8 bit colors */
-			display_string(0,"#",10);
-			display_string(0,uitoaconv(counter + 1),11);
-			display_update();
-			while(save);  /* while button 4 is down */
-			counter = (counter < number_colors-1) ? counter+1 : 0;
-		}
-	} /* while (menu) */
-
-} /* while (1) */
-	} /* if (hello) */
+					/* ---- display saved values ------ */
+					if (**fav_colors && save) { /*if there are some saved colors */
+						fetching = 1;
+						display_rgbc(*(fav_colors+counter), 1); /* show 8 bit colors */
+						display_string(0,"#",10);
+						display_string(0,uitoaconv(counter + 1),11);
+						display_update();
+						while(save); /* while button 4 is down */
+						counter = (counter < number_colors-1) ? counter+1 : 0;
+					}
+				} /* while (menu) */
+			} /* while (ready) */
+		} /* while (1) */
+	}   /* if (hello) */
 	else {
-		display_string(3, "not connected",0);
+		display_string(0, "Sensor not",0);
+		display_string(1, "connected.",0);
+		display_string(2, "Restart or SW4",0);
+		display_string(2, "runs manual mode",0);
 		display_update();
 
-		display_debug(&I2C1STAT);  //0x400  buss collison.
-		display_debug_2(&I2C1CON); //0x73  recieved ??
+		/* set up IC2 connection with buttons */
+
+		/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
+		   SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
+		   SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
+
+		 */
+
+
+		display_debug(&I2C1STAT);   //0x400  buss collison.
+		display_debug_2(&I2C1CON);   //0x73  recieved ??
 		//display_debug(&I2C1RCV);
 		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
 
 		//display_debug_2(&I2C1STAT)  --> 08008 = start/restart och nack
-		quicksleep(4000000);
+		//quicksleep(4000000);
 	}
 	return 0;
-}
+} /* main */
 
 
 /* set up chipkit */
@@ -129,31 +135,18 @@ void chipkit_init(void) {
 /* SW1 (2)= INT1; SW2 (7) = INT2; SW3 (8) = INT3; SW4 (35) = INT4 */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */
 
-/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
-   SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
-   SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
-
- */
 
 /* Interrupt Service Routine*/
 void user_isr( void ) {
 
 	if (IFS(0) & 1 << 8) {  /* timer 2 timeout 1/100 sek */
-
 		/* get input from buttons */
 		int buttons = getbtns();
-		save = (buttons & 1); /* save color */
-
-		if (buttons & 2)
-			display_string(0,"knapp 2 ", 0);
-		/* decrease gain ?  */
-		if (buttons & 4)
-			/*  increase gain ? */
-			display_string(0,"knapp 3 ", 0);
-
-		menu = (buttons & 8);
-
-		timeout++;
+		save = (buttons & 1); /* B1: save/fetch color */
+		gain_plus = (buttons & 2); /* B2: increase gain*/
+		gain_minus =  (buttons & 4); /* B3: decrease gain 3*/
+		menu = (buttons & 8);  /* B4: display menu */
+		timeouts++;
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
 
@@ -162,10 +155,10 @@ void user_isr( void ) {
 		rgb888 = !rgb888;
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
 	}
-	if (timeout == 10) { /*  1/10 sek  */
-		timeout = 0;
+	if (timeouts == 5) { /*  1/20 sek  */
+		timeouts = 0;
+		ready = !ready;
 	}
-
 }
 
 

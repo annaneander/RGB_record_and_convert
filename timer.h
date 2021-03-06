@@ -5,22 +5,21 @@
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include <stdbool.h>
 
-
-
 /*
   Timer: Initialise go
-  TMR2ERIOD = clk_frequency / prescaler /timeout_frequency = 312 
+  TMR2ERIOD = clk_frequency / prescaler /timeout_frequency = 312
   timeout_frequency = 100 ms = 0.1 sek
 */
 
 #define CLOCKFREQ 80000000   /* 80MHz */
 #define PRESCALER 256       /*  */
-#define TIMEOUTFREQ 100  /* T: 1000 ms (0.01 sek) -> f: 100 */
+#define TIMEOUTFREQ 100  /* T: 10 ms (0.01 sek) -> f: 100 */
 
 #define TMR2PERIOD ((CLOCKFREQ / PRESCALER) / TIMEOUTFREQ)
 #if TMR2PERIOD > 0xffff
 #error "Timer period is too big > 65535."
 #endif
+
 
 
 void timer_init( void );

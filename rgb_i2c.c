@@ -68,6 +68,7 @@ void i2c_init(void){
 
 /* check if the right sensor is connected */
 bool hello_rgbc(){
+	quicksleep(100);
 	bool status = (read_from_reg(RGBC_ID) == 0xAB);
 	if (!status && BCL) { /* check busscollision */
 		/* also check write to trn-collision WRCOL? */
