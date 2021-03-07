@@ -89,7 +89,7 @@ void hello_display(){
 
 void display_menu(){
 	display_string(0, "(SW2): 8/16 bit",0);
-	display_string(1, "(3)(2): gain ", 0);
+	display_string(1, "(3)+(2): gain ", 0);
 	display_string(2, "(1): save", 0);
 	display_string(3, "(4)+(1): fetch", 0);
 	display_update();
@@ -337,5 +337,15 @@ void display_debug_2( volatile int* addr )
 	display_string( 3, "Data", 0 );
 	num32asc( &textbuffer[2][6], (int) addr );
 	num32asc( &textbuffer[3][6], *addr );
+	display_update();
+}
+
+void display_debug_8( uint8_t* addr )
+{
+  int ad = (*addr + 0x0);
+	display_string( 2, "Addr", 0);
+	display_string( 3, "Data", 0 );
+	num32asc( &textbuffer[2][6], (int) addr );
+	num32asc( &textbuffer[3][6], ad );
 	display_update();
 }

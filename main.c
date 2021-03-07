@@ -12,15 +12,18 @@
 
 uint8_t timeouts = 0; /* nbr of timer2 timeouts */
 bool ready = 0; /* 1/10 sek has passed */
+uint8_t gainflag = 0;
+bool gain_ready = 0;
 uint16_t colors[4] = {0}; /* buffer - 16 bit color values of CRGB */
 uint16_t fav_colors[MAX_COLORS][4] = {0}; /* 20 favorite colors can be saved */
 static uint8_t number_colors = 0;
 
-bool rgb888 = 0; /* display 8 or 16 bit */
+bool rgb888 = 0; /* display 8 or  16 bit */
 bool save = 0; /* save color menu */
 bool menu = 0; /* display menu */
-bool gain_plus = 0;
-bool gain_minus = 0;
+bool gain = 0;
+bool gain_set = 0;
+bool start = 0;
 
 int main(void) {
 
@@ -35,76 +38,145 @@ int main(void) {
 
 	if(hello_rgbc()) {
 
-		while (1) {
 
-			//hello_display();
+		//hello_display();
+
+
+		while (1) { //&& startflag
 
 			while(ready) /* update values and display every 1/20 sek */
 			{
 				/*get value of 16 bit rgbc */
-				status = i2c_get_rgbc(colors);
+				i2c_get_rgbc(colors);
 
 				/* update display*/
 				display_rgbc(colors, rgb888);
 
-				//quicksleep(10000);
+				/* debug */
+				//display_clear();
 
-				/* ----- save values in array for now ----- */
-				if (save && (number_colors < MAX_COLORS)) { /* if button 4 is down */
-					int i;
-					for(i = 0; i<4; i++) {
-						*(fav_colors[number_colors]+i) = *(colors+i);
-					}
-					display_save(++number_colors);
-					while (save); /* while button 4 is down */
-				}
 
-				/* ----- menu ---- */
-				bool fetching = 0;
-				int counter = 0;
-				while (menu) { /* while button 1 is down */
-					!fetching && display_menu();
+				if (save)
+					save_colors();
 
-					/* ---- display saved values ------ */
-					if (**fav_colors && save) { /*if there are some saved colors */
-						fetching = 1;
-						display_rgbc(*(fav_colors+counter), 1); /* show 8 bit colors */
-						display_string(0,"#",10);
-						display_string(0,uitoaconv(counter + 1),11);
-						display_update();
-						while(save); /* while button 4 is down */
-						counter = (counter < number_colors-1) ? counter+1 : 0;
-					}
-				} /* while (menu) */
-			} /* while (ready) */
+				if (menu)
+					show_menu();
+
+				if (gain)
+					set_gain();
+
+			}
+
 		} /* while (1) */
+
 	}   /* if (hello) */
 	else {
-		display_string(0, "Sensor not",0);
-		display_string(1, "connected.",0);
-		display_string(2, "Restart or SW4",0);
-		display_string(2, "runs manual mode",0);
-		display_update();
+		// display_string(0, "Sensor not",0);
+		// display_string(1, "connected.",0);
+		// //display_string(2, "Restart or SW4",0);
+		// display_string(2, "Run manual mode",0);
+		// display_update();
+
+		/* ---------- debug --------- */
+	//	display_debug(&I2C1STAT);  //0x400  buss collison.
+	//	display_debug_2(&I2C1CON);
+		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
 
 		/* set up IC2 connection with buttons */
-
 		/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
 		   SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
 		   SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
-
 		 */
 
+		/* disable 12C */
+		i2c_off();
 
-		display_debug(&I2C1STAT);   //0x400  buss collison.
-		display_debug_2(&I2C1CON);   //0x73  recieved ??
-		//display_debug(&I2C1RCV);
-		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
+		/*-------- debug------*/
+	//	quicksleep(100);
+	//	display_debug_2(&I2C1STAT);
 
-		//display_debug_2(&I2C1STAT)  --> 08008 = start/restart och nack
-		//quicksleep(4000000);
+
 	}
 	return 0;
 } /* main */
+
+
+
+/* ----- save values in array for now ----- */
+void save_colors(){
+	if (number_colors < MAX_COLORS) { /* if button 4 is down */
+		int i;
+		for(i = 0; i<4; i++) {
+			*(fav_colors[number_colors]+i) = *(colors+i);
+		}
+		display_save(++number_colors);
+		while (save); /* while button 4 is down */
+	}
+}
+
+
+/* ----- menu ---- */
+void show_menu(){
+	bool fetching = 0;
+	int counter = 0;
+	while (menu) { /* while button 1 is down */
+		!fetching && display_menu();
+
+		/* ---- display saved values ------ */
+		if (**fav_colors && save) { /*if there are some saved colors */
+			fetching = 1;
+			display_rgbc(*(fav_colors+counter), 1); /* show 8 bit colors */
+			display_string(0,"#",10);
+			display_string(0,uitoaconv(counter + 1),11);
+			display_update();
+			while(save); /* while button 4 is down */
+			counter = (counter < number_colors-1) ? counter+1 : 0;
+		}
+	}
+}
+
+
+/* change gain settings in sensor */
+/* 1X: 0    4X:1   16X:2   64X: 3 */
+void set_gain(){
+	display_clear();
+	uint8_t old_gain = read_from_reg(A_GAIN);
+	display_string(0,"Gain",0);
+	display_update();
+
+	display_string(2,"Previous:",0);
+	display_string(2,"x",9);
+	display_string(2,uitoaconv(gain_converter(old_gain)),10);
+	display_update();
+
+	while(gain) { /* while button 3 down */
+		if (gain_set && gain_ready) {
+			old_gain++;
+			if (old_gain > 3)
+				old_gain = 0;
+			display_string(3,"New:",0);
+			display_string(3,"x",9);
+			display_string(3,uitoaconv(gain_converter(old_gain)),10);
+			display_update();
+			gain_ready = 0;
+		}
+		write_to_reg(A_GAIN, old_gain);
+	}
+}
+
+/* a small helper to display right gain*/
+uint8_t gain_converter(uint8_t gain){
+	if (gain == 0)
+		return 1;
+	if (gain == 1)
+		return 4;
+	if (gain == 2)
+		return 16;
+	if (gain == 3)
+		return 64;
+}
+
+
 
 
 /* set up chipkit */
@@ -143,24 +215,36 @@ void user_isr( void ) {
 		/* get input from buttons */
 		int buttons = getbtns();
 		save = (buttons & 1); /* B1: save/fetch color */
-		gain_plus = (buttons & 2); /* B2: increase gain*/
-		gain_minus =  (buttons & 4); /* B3: decrease gain 3*/
+		gain_set = (buttons & 2); /* B2: change gain*/
+		gain =  (buttons & 4); /* B3: toogle set gain 3*/
 		menu = (buttons & 8);  /* B4: display menu */
 		timeouts++;
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
-
 	if (IFS(0) & 1 << 11) { /* sw2 */
 		/* toogle 16 / 8 bit color value display*/
 		rgb888 = !rgb888;
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
 	}
+
+	/* check if inter from SW4  */
+	if (IFS(0) & 1 << 19) { /* SW4 */
+		/* on/off sensor */
+		start = !start;
+		IFSCLR(0) = 1 << 19;  /* clear Sw4 flag */
+	}
+
 	if (timeouts == 5) { /*  1/20 sek  */
 		timeouts = 0;
 		ready = !ready;
+		gainflag++;
 	}
-}
+	if (gainflag == 5){ /* 5 -> every second */
+		gainflag = 0;
+		gain_ready = 1;
+	}
 
+}
 
 /* -----------   some i/o functions for buttons and switches ---------     */
 

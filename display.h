@@ -41,7 +41,7 @@ void display_string(int line, char *s, int offset); /* (AN*)*/
 void display_update(void);
 void display_debug( volatile int *const addr );
 void display_debug_2( volatile int *addr ); /* (AN*)*/
-
+void display_debug_8( uint8_t *addr ); /* (AN*)*/
 
 /*  ----- (AN) ---- */
 void hello_display(void);

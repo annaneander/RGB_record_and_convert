@@ -98,6 +98,8 @@ void i2c_stop(void);
 /* ---------- end by A. Isaksson ----------- */
 
 void i2c_init( void );
+void i2c_off( void );
+void i2c_on( void);
 bool hello_rgbc(void);
 bool i2c_get_rgbc(uint16_t*);
 

@@ -14,10 +14,14 @@
 #include <stdbool.h>
 #include "display.h"
 #include "timer.h"
+#include "rgb_i2c.h"
 
 
 void chipkit_init(void);
-
+void save_colors(void);
+void show_menu(void);
+void set_gain();
+uint8_t gain_converter(uint8_t gain);
 
 
 /* Written as part of i/o lab: getbtns, getsw, enable_interrupt */

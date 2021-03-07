@@ -69,22 +69,36 @@ void i2c_init(void){
 /* check if the right sensor is connected */
 bool hello_rgbc(){
 	quicksleep(100);
-	bool status = (read_from_reg(RGBC_ID) == 0xAB);
-	if (!status && BCL) { /* check busscollision */
+	bool status = 0;
+	uint8_t restart = 10;
+	status = (read_from_reg(RGBC_ID) == 0xAB);
+	while (!status && BCL && restart) { /* check busscollision */
 		/* also check write to trn-collision WRCOL? */
-
-		I2C1CONCLR = 1 << 15;    /*turn i2c off -> i/o bits controlled by PORT functs*/
-		quicksleep(10000);
-		i2c_init();     /*detta funkar men nödvändigt? */
-		//I2C1CONCLR = 1 << 15;/*turn i2c off  */
-		quicksleep(10000);
-		//i2c_start();
-		//I2C1CONSET = 1 << 15; /*turn i2c on -> SDA & SCL as tristate ports, controlled by I2C module*/
-		//quicksleep(100);
+		i2c_off(); /* resets BCL flag */
+    display_debug(&I2C1STAT);
+		quicksleep(100000);
+		i2c_on();
+    display_debug_2(&I2C1STAT);
+		quicksleep(100000);
+		status = (read_from_reg(RGBC_ID) == 0xAB);
+		quicksleep(100);
+		restart--; /* try restarting 10 times */
 	}
 	status = (read_from_reg(RGBC_ID) == 0xAB);
 	return status;
 }
+
+
+
+void i2c_off(){
+	I2C1CONCLR = 1 << 15;    /*turn i2c off -> i/o bits controlled by PORT functs*/
+}
+
+void i2c_on(){
+	I2C1CONSET = 1 << 15; /*turn i2c on -> SDA & SCL as tristate ports, controlled by I2C module*/
+}
+
+
 
 
 /* ---------------- by A. Isaksson (AN* + added comments)------------------ */
