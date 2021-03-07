@@ -28,7 +28,6 @@ bool start = 0;
 
 int main(void) {
 
-	bool status = 0;
 
 	chipkit_init();
 	display_init();
@@ -51,8 +50,6 @@ int main(void) {
 
 				/* update display */
 				hex ? display_hex(colors): display_rgbc(colors, rgb888);
-				//display_rgbc(colors, rgb888);
-			//	display_hex(colors);
 
 				if (save)
 					save_colors();
@@ -72,27 +69,60 @@ int main(void) {
 		display_string(1, "connected.",0);
 		display_string(2, "Run manual mode",0);
 		display_string(3, "BT3=SDA  BT2=SCL",0);
-
 		display_update();
 
-		/* set up IC2 connection with buttons */
 
-		/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
-		   SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
+		/* -------- set up manual I2C connection with buttons -------- */
+		/* --------  BTN3 = 36 (RD6) - BTN2 = 34 (RD5); --------- */
+		/* ---------- Knapp 3 (SDA) och 2 (SCL) ----------- */
 
-			 SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
-		 */
+		/*  SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
+		    SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12  */
 
-		/* disable 12C */
+
+		/*turn i2c off -> i/o bits controlled by PORT functs */
 		i2c_off();
 
-		/* ------- knapp 3 (SDA) och 2 (SCL) --------- */
-
-		/*   BTN2 = 34 (RD5);    BTN3 = 36 (RD6  */
-
-
+		/*  Annars: ----------------   */
+		/* SCL - 19/A5 - Register B. bit 14 */
+		/* SDA - 18/A4 - Register B  bit 12 */
 
 
+		ODCBSET = 0x00005000;  /* set as open drain  */
+
+		TRISESET = 0x11;  /* set LED 1 and 5 as output.  */
+		PORTECLR = 0xFF; /* init to not lit */
+
+		while (1) {
+			if ((PORTD >> 4) & 2 ) {    /* 2 on SCL */
+				//	PORTESET = 0x1;   /* light up led */
+				PORTBSET = 0X00004000; /* send signal */
+			}
+			if (~(PORTD >> 4) & 2 ) {   /* 2  off SCL */
+				//	PORTECLEAR = 0x1;   /* turn off led */
+				PORTBCLR = 0X00004000; /* end signal */
+			}
+			if ((PORTD >> 4) & 4 ) {  /* 3  on SDA */
+				//	PORTESET = 0x10;  /* light up led */
+				PORTBSET = 0X00001000; /* send signal */
+			}
+			if (~(PORTD >> 4) & 4 ) { /* 3  off SDA */
+				//PORTESET = 0x10; /*  turn off led */
+				PORTBCLR = 0X00001000; /* end signal */
+			}
+			if(PORTB >> 12 & 4) {  /* SCL high */
+				PORTESET = 0x1;     /* light up led */
+			}
+			if(~(PORTB >> 12) & 4) {  /* SCL low */
+				PORTECLR = 0x1;     /* turn off up led */
+			}
+			if(PORTB >> 12 & 1) {   /* SDA high */
+				PORTESET = 0x10;  /* light up led */
+			}
+			if(~(PORTB >> 12) & 1) {  /* SDA low */
+				PORTECLR = 0x10;   /* turn off up led */
+			}
+		}
 
 
 		/* -------- debug--------------- */
@@ -205,7 +235,6 @@ void chipkit_init(void) {
 	TRISFSET = (1 << 1); /* Button1 */
 
 }
-
 
 /* SW3 (8) = INT3; */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */

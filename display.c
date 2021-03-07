@@ -121,25 +121,25 @@ void display_rgbc(uint16_t* colors, bool lower){
 
 /* (AN) update display with hex values of color */
 void display_hex(uint16_t* colors){
-  char *col[3] = {"LUX: "," ","HEX: "};
+	char *col[3] = {"LUX: "," ","HEX: "};
 	int i;
-  int h = 0;
+	int h = 0;
+	display_clr_buffer();
 	for (i = 0; i<3; i++) {
 		display_string(i, *(col+i), 0);
 	}
-  display_string(1," ",0);
-  display_string(3," ",0);
-  display_string(0, uitoaconv(*(colors)), 4); //keep lux 16
-  h = ((*(colors+1) >> 8)) << 16; /* 8 bit R */
-  h |= ((*(colors+2) >> 8)) << 8; /* 8 bit G */
-  h |= (*(colors+3) >> 8);  /* 8 bit G */
-  display_string(2, num32asc_ret(h), 4);
+
+	display_string(0, uitoaconv(*(colors)), 4); //keep lux 16
+	h = ((*(colors+1) >> 8)) << 16; /* 8 bit R */
+	h |= ((*(colors+2) >> 8)) << 8; /* 8 bit G */
+	h |= (*(colors+3) >> 8);  /* 8 bit G */
+	display_string(2, num32asc_ret(h), 4);
 	display_update();
 }
 
 
 
-/* (AN) clear all bits in display and local textbuffer */
+/* (AN) clear all bits in local textbuffer and display */
 void display_clear(void){
 	uint8_t clear[128*5];
 	int i;
@@ -147,16 +147,16 @@ void display_clear(void){
 		clear[i] = 0x00;
 	display_image(0, 128, clear);
 	display_clr_buffer();
+	display_update();
 }
 
-/* (AN) clear local text display buffer */
+/* (AN) clear local text buffer for display */
 void display_clr_buffer(void){
 	int i, j;
 	for( i = 0; i <4; i++) {
 		for(j = 0; j<16; j++)
 			textbuffer[i][j] = ' ';
 	}
-	display_update();
 }
 
 
@@ -261,13 +261,13 @@ char* uitoaconv(int num )
 char* num32asc_ret(int n )
 {
 	int i;
-  int j = 0;
-  int k = 0;
-  static char t[6];
+	int j = 0;
+	int k = 0;
+	static char t[6];
 	for( i = 28; i >= 0; i -= 4 )
-    t[j++] = "0123456789ABCDEF"[ (n >> i) & 15 ];
-  	while(t[k++] == '0');
-  return &t[k-1];
+		t[j++] = "0123456789ABCDEF"[ (n >> i) & 15 ];
+	while(t[k++] == '0');
+	return &t[k-1];
 }
 
 
@@ -283,7 +283,7 @@ void display_debug_2( volatile int* addr )
 
 void display_debug_8( uint8_t* addr )
 {
-  int ad = (*addr + 0x0);
+	int ad = (*addr + 0x0);
 	display_string( 2, "Addr", 0);
 	display_string( 3, "Data", 0 );
 	num32asc( &textbuffer[2][6], (int) addr );

@@ -14,7 +14,6 @@
 #include <stdint.h>   /* Declarations of uint_32 and the like */
 #include <pic32mx.h>  /* Declarations of system-specific addresses etc */
 #include <stdbool.h>
-//#include "display_data.h"
 
 
 #define DISPLAY_CHANGE_TO_COMMAND_MODE (PORTFCLR = 0x10)
@@ -54,8 +53,8 @@ void display_clr_buffer(void);
 /* ------- local helper function to display ----- */
 char* num32asc_ret(int n ); /* (AN*) */
 static void num32asc( char *s, int );
-uint8_t spi_send_recv(uint8_t data);  // extern /static?
-void quicksleep(int cyc); //extern / static?
+uint8_t spi_send_recv(uint8_t data);
+void quicksleep(int cyc);
 
 char* uitoaconv(int num);  /* (AN*)  */
 void concat(char *first, char *second); /*(AN)*/
@@ -64,8 +63,6 @@ void concat(char *first, char *second); /*(AN)*/
 
 /* ---  debug - remove --------*/
 volatile int* debug;
-//void display_debug_8( volatile uint8_t *addr ); /* (AN*)*/
-
 
 
 #endif

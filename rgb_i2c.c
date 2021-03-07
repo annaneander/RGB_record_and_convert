@@ -31,7 +31,7 @@ void i2c_init(void){
 	   Change to 80 Mhz --> BRG: 0x018A --> 100 kHz */
 	I2C1BRG = 0x00C5;   /* baud rate generator clk --> 100 kHz*/
 	I2C1STAT = 0x0;    /* clear acken, recieve, stop, restart, start */
-//	I2C1CONSET = 1 << 13;   /* Stop in idle mode */
+//I2C1CONSET = 1 << 13;   /* Stop in idle mode */
 	I2C1CONSET = 1 << 15;   /* Turn on i2c. Sets pins to tri-state */
 
 	/* ---------------------------- */
@@ -45,10 +45,6 @@ void i2c_init(void){
 
 	/* ----- write to control registers in sensor ----- */
 
-	/*
-	   TODO:
-	   the Sleep After Interrupt bit, SAI ? set?
-	 */
 
 	write_to_reg(ATIME, 0xC0); /* Measure time: 175 ms for max (2^16 bit) color range */
 	write_to_reg(A_GAIN, 0x1); /* Gain control: 4x */
@@ -63,7 +59,7 @@ void i2c_init(void){
 	write_to_reg(ENABLE, 0xB); /* Wait, Start  */
 }
 
-/*  address should be here?  I2C1ADD */
+
 
 /* check if the right sensor is connected */
 bool hello_rgbc(){
@@ -74,11 +70,9 @@ bool hello_rgbc(){
 	while (!status && BCL && restart) { /* check busscollision */
 		/* also check write to trn-collision WRCOL? */
 		i2c_off(); /* resets BCL flag */
-    display_debug(&I2C1STAT);
-		quicksleep(100000);
+		quicksleep(1000);
 		i2c_on();
-    display_debug_2(&I2C1STAT);
-		quicksleep(100000);
+		quicksleep(1000);
 		status = (read_from_reg(RGBC_ID) == 0xAB);
 		quicksleep(100);
 		restart--; /* try restarting 10 times */
@@ -154,14 +148,13 @@ void i2c_restart() {
 
 /* Send stop conditon on the bus */
 void i2c_stop() {
-	/* fastnar här och ser ingen nack före stop i protokollet för sensorn så provar utan. ev kolla flaggorna */
-	i2c_idle();  /*  denna kan behöva kommenteras ut. förstår inte helt varför   */
+	i2c_idle();
 	STOP;  /* --> slave sets stop <4> and clears start <3> in I2CCON  */
 	i2c_idle();
 
 }
 
-/* check ACKSTAT after transmit? */
+
 /* check write to trn-collision WRCOL?  - needs to be cleared manually  */
 
 
@@ -189,10 +182,10 @@ uint8_t read_from_reg(uint8_t reg){
 	status = i2c_send(reg);
 	if (status) {
 		i2c_restart();
-		status = i2c_send(READ_SENSOR);       /* Send read */
-		i2c_recv();  //check ackstat?
-		i2c_nack();  //check ackstat?
-		i2c_stop();  //check ackstat?
+		status = i2c_send(READ_SENSOR); /* Send read */
+		i2c_recv();
+		i2c_nack();
+		i2c_stop();
 	} else{
 		*debug = I2CCON; //debug
 	}
@@ -211,7 +204,8 @@ bool i2c_get_rgbc(uint16_t* c){
 }
 
 
-/* Read (j) number of 2 bytes to adress of (data) from register in sensor starting with (reg). Return status of transfer. */
+/* Read (j) number of 2 bytes to adress of (data) from register
+    in sensor starting with (reg). Return status of transfer. */
 bool read_block(uint8_t reg, int j, uint16_t* data){
 	bool status = 0;
 	do {
@@ -222,7 +216,8 @@ bool read_block(uint8_t reg, int j, uint16_t* data){
 		i2c_restart();
 	} while(!i2c_send(READ_SENSOR)); /* Send read */
 
-	// Alla värden på CRGB låses och hämtas om läsningen börjar med adressen för C_LOW --> rätt färgvärde hämtas.
+	/* Alla värden på CRGB låses och hämtas om läsningen
+	   börjar med adressen för C_LOW --> rätt färgvärde hämtas.*/
 	int i;
 	for(i = 0; i<4; i++) {
 		i2c_recv();
@@ -233,7 +228,7 @@ bool read_block(uint8_t reg, int j, uint16_t* data){
 		if(i<3)
 			i2c_ack();
 	}
-	i2c_nack(); //ev kommentera ut denna?
+	i2c_nack();
 	i2c_stop();
 	return status;
 }

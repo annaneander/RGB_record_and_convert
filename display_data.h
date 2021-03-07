@@ -18,7 +18,7 @@
    Display is organised in memory as a bytearray,
    with each byte representing a column.
    Display is further divided into 4 pages (rows)
-   of 128 (??) columns each.
+   of 128 columns each.
    Updates to display are sent as data-commands.
  */
 
