@@ -38,11 +38,10 @@ int main(void) {
 
 	if(hello_rgbc()) {
 
+		hello_display();  /* display start screen */
+		while(!start); /* wait for start from user */
 
-		//hello_display();
-
-
-		while (1) { //&& startflag
+		while (1) {
 
 			while(ready) /* update values and display every 1/20 sek */
 			{
@@ -55,7 +54,6 @@ int main(void) {
 				/* debug */
 				//display_clear();
 
-
 				if (save)
 					save_colors();
 
@@ -64,7 +62,6 @@ int main(void) {
 
 				if (gain)
 					set_gain();
-
 			}
 
 		} /* while (1) */

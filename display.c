@@ -79,10 +79,10 @@ void display_init(void) {
 }
 
 void hello_display(){
-	display_string(0, "RGB RGB RGB RGB ",0);
-	display_string(1, "GB RGB RGB RGB RG", 0);
-	display_string(2, "B RGB RGB RGB RGB ", 0);
-	display_string(3, " RGB RGB RGB RGB RGB", 0);
+	display_string(0, " AMBIENT LIGHT ",0);
+	display_string(1, "----- **** -----", 0);
+	display_string(2, "SW 4: START ", 0);
+	display_string(3, "BTN 4: MENU ", 0);
 	display_update();
 }
 
