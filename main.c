@@ -49,10 +49,8 @@ int main(void) {
 				i2c_get_rgbc(colors);
 
 				/* update display*/
-				display_rgbc(colors, rgb888);
-
-				/* debug */
-				//display_clear();
+				//display_rgbc(colors, rgb888);
+				display_hex(colors, 1);
 
 				if (save)
 					save_colors();
@@ -138,10 +136,10 @@ void show_menu(){
 void set_gain(){
 	display_clear();
 	uint8_t old_gain = read_from_reg(A_GAIN);
-	display_string(0,"Gain",0);
+	display_string(0,"GAIN",0);
 	display_update();
 
-	display_string(2,"Previous:",0);
+	display_string(2,"Present:",0);
 	display_string(2,"x",9);
 	display_string(2,uitoaconv(gain_converter(old_gain)),10);
 	display_update();

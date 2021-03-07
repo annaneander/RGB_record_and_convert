@@ -51,12 +51,16 @@ void display_clr_buffer(void);
 
 
 /* ------- local helper function to display ----- */
+char* num32asc_ret(int n ); /* (AN*) */
 static void num32asc( char *s, int );
 uint8_t spi_send_recv(uint8_t data);  // extern /static?
 void quicksleep(int cyc); //extern / static?
 
 char* uitoaconv(int num);  /* (AN*)  */
 void concat(char *first, char *second); /*(AN)*/
+
+
+void display_hex(uint16_t* colors, bool hex);
 
 
 /* ---  debug - remove --------*/

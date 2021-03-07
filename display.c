@@ -119,6 +119,26 @@ void display_rgbc(uint16_t* colors, bool lower){
 }
 
 
+/* (AN) update display with hex values of color */
+void display_hex(uint16_t* colors, bool hexi){
+  char *col[3] = {"LUX: "," ","HEX: "};
+	int i;
+  int hex = 0;
+	for (i = 0; i<3; i++) {
+		display_string(i, *(col+i), 0);
+	}
+  display_string(1," ",0);
+  display_string(3," ",0);
+  display_string(0, uitoaconv(*(colors)), 4); //keep lux 16
+  hex = ((*(colors+1) >> 4)) << 8; /* 8 bit R */
+  hex |= ((*(colors+2) >> 4)) << 4; /* 8 bit G */
+  hex |= (*(colors+3) >> 4);  /* 8 bit G */
+  display_string(2, num32asc_ret(hex), 4);
+	display_update();
+}
+
+
+
 /* (AN) clear all bits in display and local textbuffer */
 void display_clear(void){
 	uint8_t clear[128*5];
@@ -204,7 +224,7 @@ void display_image(int x, int w, const uint8_t *data) {
 
 
 /*
- * itoa - rewritten for max 16 bit (2^16 = 65535) unsigned (AN).
+ * itoa - rewritten for max 24 bit (2^24 = 17 777 215) unsigned (AN).
  * Author: Axelsson / Lundevall.
  * Simple conversion routine
  * Converts binary to decimal numbers
@@ -214,7 +234,7 @@ void display_image(int x, int w, const uint8_t *data) {
  * of digits representing the integer in decimal format.
  *
  */
-#define ITOA_BUFSIZ ( 6 )
+#define ITOA_BUFSIZ ( 9 )
 char* uitoaconv(int num )
 {
 	register int i;
@@ -235,16 +255,41 @@ char* uitoaconv(int num )
 }
 
 
-// void display_debug_8( volatile uint8_t* addr )
-// {
-//   int ad = (*addr + 0x0);
-//   display_string( 2, "Addr" , 0);
-//   display_string( 3, "Data", 0 );
-//   num32asc( &textbuffer[2][6], (int) addr );
-//   num32asc( &textbuffer[3][6], ad );
-//   display_update();
-// }
 
+/* Just rewritten to get return and remove start '0' (AN*)
+   Converts a number to hexadecimal ASCII digits. */
+char* num32asc_ret(int n )
+{
+	int i;
+  int j = 0;
+  int k = 0;
+  static char t[6];
+	for( i = 28; i >= 0; i -= 4 )
+    t[j++] = "0123456789ABCDEF"[ (n >> i) & 15 ];
+  	while(t[k++] == '0');
+  return &t[k-1];
+}
+
+
+/* only changed the lines and types (AN*)  */
+void display_debug_2( volatile int* addr )
+{
+	display_string( 2, "Addr", 0);
+	display_string( 3, "Data", 0 );
+	num32asc( &textbuffer[2][6], (int) addr );
+	num32asc( &textbuffer[3][6], *addr );
+	display_update();
+}
+
+void display_debug_8( uint8_t* addr )
+{
+  int ad = (*addr + 0x0);
+	display_string( 2, "Addr", 0);
+	display_string( 3, "Data", 0 );
+	num32asc( &textbuffer[2][6], (int) addr );
+	num32asc( &textbuffer[3][6], ad );
+	display_update();
+}
 
 
 
@@ -304,7 +349,6 @@ static void num32asc( char * s, int n )
 }
 
 
-
 /*
    A simple function to create a small delay.
    Very inefficient use of computing resources,
@@ -327,25 +371,5 @@ void display_debug( volatile int * const addr )
 	display_string( 1, "Data", 0 );
 	num32asc( &textbuffer[0][6], (int) addr );
 	num32asc( &textbuffer[1][6], *addr );
-	display_update();
-}
-
-
-void display_debug_2( volatile int* addr )
-{
-	display_string( 2, "Addr", 0);
-	display_string( 3, "Data", 0 );
-	num32asc( &textbuffer[2][6], (int) addr );
-	num32asc( &textbuffer[3][6], *addr );
-	display_update();
-}
-
-void display_debug_8( uint8_t* addr )
-{
-  int ad = (*addr + 0x0);
-	display_string( 2, "Addr", 0);
-	display_string( 3, "Data", 0 );
-	num32asc( &textbuffer[2][6], (int) addr );
-	num32asc( &textbuffer[3][6], ad );
 	display_update();
 }
