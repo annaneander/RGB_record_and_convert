@@ -31,7 +31,6 @@ void i2c_init(void){
 	   Change to 80 Mhz --> BRG: 0x018A --> 100 kHz */
 	I2C1BRG = 0x00C5;   /* baud rate generator clk --> 100 kHz*/
 	I2C1STAT = 0x0;    /* clear acken, recieve, stop, restart, start */
-	//CLKSTRETCH;  /* enbl clockstretch; only in slave mode!*/
 //	I2C1CONSET = 1 << 13;   /* Stop in idle mode */
 	I2C1CONSET = 1 << 15;   /* Turn on i2c. Sets pins to tri-state */
 
@@ -87,7 +86,6 @@ bool hello_rgbc(){
 	status = (read_from_reg(RGBC_ID) == 0xAB);
 	return status;
 }
-
 
 
 void i2c_off(){
@@ -157,7 +155,7 @@ void i2c_restart() {
 /* Send stop conditon on the bus */
 void i2c_stop() {
 	/* fastnar här och ser ingen nack före stop i protokollet för sensorn så provar utan. ev kolla flaggorna */
-	//i2c_idle();
+	i2c_idle();  /*  denna kan behöva kommenteras ut. förstår inte helt varför   */
 	STOP;  /* --> slave sets stop <4> and clears start <3> in I2CCON  */
 	i2c_idle();
 
@@ -185,7 +183,6 @@ bool write_to_reg(uint8_t reg, uint8_t data){
 /* read one byte from register (reg) in sensor */
 uint8_t read_from_reg(uint8_t reg){
 	bool status = 0;
-	//TODO skriv om ?
 	do {
 		i2c_start();
 	} while(!i2c_send(WRITE_SENSOR));
@@ -194,7 +191,7 @@ uint8_t read_from_reg(uint8_t reg){
 		i2c_restart();
 		status = i2c_send(READ_SENSOR);       /* Send read */
 		i2c_recv();  //check ackstat?
-		i2c_nack();  //check ackstat?  //ev kommentera ut denna?
+		i2c_nack();  //check ackstat?
 		i2c_stop();  //check ackstat?
 	} else{
 		*debug = I2CCON; //debug
@@ -262,8 +259,6 @@ uint8_t* p_read_from_reg(uint8_t reg){
 	i2c_recv(); //hantera ev fel!
 	i2c_nack();
 	i2c_stop();
-	//display_debug(0xBF805060);  //I2CRCV
-	//display_debug_8(&I2CRCV);  //   (I2C1RCV)
 	*data = (I2CRCV);
 	return data;
 }

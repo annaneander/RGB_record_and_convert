@@ -70,20 +70,27 @@ int main(void) {
 	else {
 		display_string(0, "Sensor not",0);
 		display_string(1, "connected.",0);
-		//display_string(2, "Restart or SW4",0);
 		display_string(2, "Run manual mode",0);
+		display_string(3, "BT3=SDA  BT2=SCL",0);
+
 		display_update();
 
 		/* set up IC2 connection with buttons */
+
 		/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
 		   SCL - 19/A5 - PMALH / PMA1 / U2RTS/ AN14 /  RB14
-		   SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
+
+			 SDA - 18/A4 - TCK/ PMA11/ AN12/ RB12
 		 */
 
 		/* disable 12C */
 		i2c_off();
 
 		/* ------- knapp 3 (SDA) och 2 (SCL) --------- */
+
+		/*   BTN2 = 34 (RD5);    BTN3 = 36 (RD6  */
+
+
 
 
 
@@ -200,7 +207,7 @@ void chipkit_init(void) {
 }
 
 
-/* SW1 (2)= INT1; SW2 (7) = INT2; SW3 (8) = INT3; SW4 (35) = INT4 */
+/* SW3 (8) = INT3; */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */
 
 
@@ -231,7 +238,7 @@ void user_isr( void ) {
 		IFSCLR(0) = 1 << 19; /* clear Sw4 flag */
 	}
 
-	/* SW1 */  /* TODO: behövs ju slå av 2ggr. Hantera? */
+	/* SW1 */  /* TODO: behövs ju flippa SW1 2ggr för att bryta hex. Ändra? */
 	if (IFS(0) & 1 << 7) {   /* SW1 */
 		hex = !hex;   /* toggle hex */
 		IFSCLR(0) = 1 << 7;  /* clear SW1 flag */

@@ -1,3 +1,11 @@
+/* * * timer.h
+ *
+ *   Author: Anna Neander (2021)
+ *
+ *   For copyright and licensing, see file COPYING
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 #ifndef TIMER_H
 #define TIMER_H
 
@@ -6,7 +14,7 @@
 #include <stdbool.h>
 
 /*
-  Timer: Initialise go
+  Timer: Initialise to
   TMR2ERIOD = clk_frequency / prescaler /timeout_frequency = 312
   timeout_frequency = 100 ms = 0.1 sek
 */
