@@ -120,20 +120,20 @@ void display_rgbc(uint16_t* colors, bool lower){
 
 
 /* (AN) update display with hex values of color */
-void display_hex(uint16_t* colors, bool hexi){
+void display_hex(uint16_t* colors){
   char *col[3] = {"LUX: "," ","HEX: "};
 	int i;
-  int hex = 0;
+  int h = 0;
 	for (i = 0; i<3; i++) {
 		display_string(i, *(col+i), 0);
 	}
   display_string(1," ",0);
   display_string(3," ",0);
   display_string(0, uitoaconv(*(colors)), 4); //keep lux 16
-  hex = ((*(colors+1) >> 4)) << 8; /* 8 bit R */
-  hex |= ((*(colors+2) >> 4)) << 4; /* 8 bit G */
-  hex |= (*(colors+3) >> 4);  /* 8 bit G */
-  display_string(2, num32asc_ret(hex), 4);
+  h = ((*(colors+1) >> 8)) << 16; /* 8 bit R */
+  h |= ((*(colors+2) >> 8)) << 8; /* 8 bit G */
+  h |= (*(colors+3) >> 8);  /* 8 bit G */
+  display_string(2, num32asc_ret(h), 4);
 	display_update();
 }
 

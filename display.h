@@ -46,6 +46,7 @@ void display_debug_8( uint8_t *addr ); /* (AN*)*/
 /*  ----- (AN) ---- */
 void hello_display(void);
 void display_rgbc(uint16_t* colors, bool lower);
+void display_hex(uint16_t* colors);
 void display_clear(void);
 void display_clr_buffer(void);
 
@@ -59,8 +60,6 @@ void quicksleep(int cyc); //extern / static?
 char* uitoaconv(int num);  /* (AN*)  */
 void concat(char *first, char *second); /*(AN)*/
 
-
-void display_hex(uint16_t* colors, bool hex);
 
 
 /* ---  debug - remove --------*/

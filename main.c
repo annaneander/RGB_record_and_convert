@@ -19,6 +19,7 @@ uint16_t fav_colors[MAX_COLORS][4] = {0}; /* 20 favorite colors can be saved */
 static uint8_t number_colors = 0;
 
 bool rgb888 = 0; /* display 8 or  16 bit */
+bool hex = 0; /* display hex */
 bool save = 0; /* save color menu */
 bool menu = 0; /* display menu */
 bool gain = 0;
@@ -45,12 +46,13 @@ int main(void) {
 
 			while(ready) /* update values and display every 1/20 sek */
 			{
-				/*get value of 16 bit rgbc */
+				/* get value of 16 bit rgbc */
 				i2c_get_rgbc(colors);
 
-				/* update display*/
+				/* update display */
+				hex ? display_hex(colors): display_rgbc(colors, rgb888);
 				//display_rgbc(colors, rgb888);
-				display_hex(colors, 1);
+			//	display_hex(colors);
 
 				if (save)
 					save_colors();
@@ -66,16 +68,11 @@ int main(void) {
 
 	}   /* if (hello) */
 	else {
-		// display_string(0, "Sensor not",0);
-		// display_string(1, "connected.",0);
-		// //display_string(2, "Restart or SW4",0);
-		// display_string(2, "Run manual mode",0);
-		// display_update();
-
-		/* ---------- debug --------- */
-	//	display_debug(&I2C1STAT);  //0x400  buss collison.
-	//	display_debug_2(&I2C1CON);
-		//0x9020 -> 5- nack sent/recieved?, 12 (ckl relase control bit), 15 (on)
+		display_string(0, "Sensor not",0);
+		display_string(1, "connected.",0);
+		//display_string(2, "Restart or SW4",0);
+		display_string(2, "Run manual mode",0);
+		display_update();
 
 		/* set up IC2 connection with buttons */
 		/* manuell styrning: låt tex SW4 stänga av I2C och koppla två knappar till SCL och SDA (med LED som indik). Hur sätta portarna open drain? Eller måste A4/A5 användas?
@@ -86,10 +83,15 @@ int main(void) {
 		/* disable 12C */
 		i2c_off();
 
-		/*-------- debug------*/
-	//	quicksleep(100);
-	//	display_debug_2(&I2C1STAT);
+		/* ------- knapp 3 (SDA) och 2 (SCL) --------- */
 
+
+
+
+		/* -------- debug--------------- */
+		//	quicksleep(100);
+		//	display_debug(&I2C1STAT);  // 0x400  buss collison.
+		//	display_debug_2(&I2C1CON); // 15 (on) 0x9020 5 ack/nack?
 
 	}
 	return 0;
@@ -198,7 +200,6 @@ void chipkit_init(void) {
 }
 
 
-
 /* SW1 (2)= INT1; SW2 (7) = INT2; SW3 (8) = INT3; SW4 (35) = INT4 */
 /* BTN1 = 4 (RF1); BTN2 = 34 (RD5); BTN3 = 36 (RD6); BTN4 = 37 (RD7)  */
 
@@ -206,6 +207,7 @@ void chipkit_init(void) {
 /* Interrupt Service Routine*/
 void user_isr( void ) {
 
+	/* TIMER2 */
 	if (IFS(0) & 1 << 8) {  /* timer 2 timeout 1/100 sek */
 		/* get input from buttons */
 		int buttons = getbtns();
@@ -216,17 +218,23 @@ void user_isr( void ) {
 		timeouts++;
 		IFSCLR(0) = 1 << 8; /* clear timer2 flag */
 	}
-	if (IFS(0) & 1 << 11) { /* sw2 */
-		/* toogle 16 / 8 bit color value display*/
-		rgb888 = !rgb888;
+
+	/* SW2 */
+	if (IFS(0) & 1 << 11) {
+		rgb888 = !rgb888; /* toogle 16 / 8 bit color value display*/
 		IFSCLR(0) = 1 << 11;  /* clear sw2 flag */
 	}
 
-	/* check if inter from SW4  */
+	/* SW4 */
 	if (IFS(0) & 1 << 19) { /* SW4 */
-		/* on/off sensor */
-		start = !start;
-		IFSCLR(0) = 1 << 19;  /* clear Sw4 flag */
+		start = !start; /* on/off sensor */
+		IFSCLR(0) = 1 << 19; /* clear Sw4 flag */
+	}
+
+	/* SW1 */  /* TODO: behövs ju slå av 2ggr. Hantera? */
+	if (IFS(0) & 1 << 7) {   /* SW1 */
+		hex = !hex;   /* toggle hex */
+		IFSCLR(0) = 1 << 7;  /* clear SW1 flag */
 	}
 
 	if (timeouts == 5) { /*  1/20 sek  */
@@ -234,7 +242,7 @@ void user_isr( void ) {
 		ready = !ready;
 		gainflag++;
 	}
-	if (gainflag == 5){ /* 5 -> every second */
+	if (gainflag == 5) { /* 5 -> every second */
 		gainflag = 0;
 		gain_ready = 1;
 	}

@@ -36,6 +36,13 @@ void timer_init( void )
   IFSCLR(0) = 1 << 19;   /* clear flag: IFS(0) 19 */
   IECSET(0) = 1 << 19;    /* enable IEC(0) 19 */
 
+
+  /* --- INT 1 (SW1) -----  */
+  IPC(1) = 0x0C000000; /* prio: <28:26> to 3 and sub <25:24> to 0 */
+  IFSCLR(0) = 1 << 7;   /* clear flag: IFS(0) 7 */
+  IECSET(0) = 1 << 7;    /* enable IEC(0) 7 */
+
+
   T2CONSET = 1 << 15;   /* start timer */
 
   return;
